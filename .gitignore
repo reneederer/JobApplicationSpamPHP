@@ -12,3 +12,5 @@ yarn-error.log
 .env
 unoconv-master
 public/js/jquery-3.2.1.slim.min.js
+public/js/bootstrap.min.js
+public/css/bootstrap.min.css

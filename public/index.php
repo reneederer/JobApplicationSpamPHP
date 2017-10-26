@@ -227,69 +227,15 @@ $kernel->terminate($request, $response);
 
 
 ?>
+<!DOCTYPE html>
 <html>
 <head>
-<style>
-.selectableTable {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-th, td {
-    text-align: left;
-    padding: 8px;
-}
-
-tr:nth-child(even){background-color: #f2f2f2}
-
-
-
-.tabs {
-  position: relative;   
-  min-height: 1200px; // This part sucks
-  clear: both;
-  margin: 70px 70px;
-}
-.tab {
-  float: left;
-}
-.tab label {
-  background: #eee; 
-  padding: 10px; 
-  border: 1px solid #ccc; 
-  margin-left: -1px; 
-  position: relative;
-  left: 1px; 
-}
-.tab [type=radio] {
-  display: none;   
-}
-.content {
-  position: absolute;
-  top: 28px;
-  left: 0;
-  background: white;
-  right: 0;
-  bottom: 0;
-  padding: 20px;
-  border: 1px solid #ccc; 
-}
-[type=radio]:checked ~ label {
-  background: white;
-  border-bottom: 1px solid white;
-  z-index: 2;
-}
-[type=radio]:checked ~ label ~ .content {
-  z-index: 1;
-}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<script src="js/jquery-3.2.1.slim.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="css/bootstrap.min.css">
 <title>Meine Bewerbung</title>
-<style>
-div
-{
-    margin-bottom:40px;
-}
-</style>
 </head>
 <body onLoad="templateAppendixSelected(1);">
 <?php
@@ -372,12 +318,51 @@ div
 <!-- uploadApplicationTemplate()
 
 -->
-<div class="tabs">
-    <div id="uploadJobApplicationTemplateDiv" class="tab">
-        <input type="radio" id="tab-1" name="tab-group-1" checked>
-        <label for="tab-1">Bewerbungsvorlage hochladen</label>
-        <div class="content">
-            Bewerbungsvorlage hochladen
+<?php
+    function shouldSelectUploadJobApplicationTemplateTab()
+    {
+        return !isset($_POST['sbmUploadJobApplicationTemplate'])
+            && !isset($_POST['sbmSetUserValues'])
+            && !isset($_POST['sbmAddEmployer'])
+            && !isset($_POST['sbmSendJobApplication'])
+            && !isset($_POST['sbmSendTestJobApplication']);
+    }
+    function shouldSelectSetUserValuesTab()
+    {
+        return isset($_POST['sbmSetUserValues']);
+    }
+
+    function shouldSelectAddEmployerTab()
+    {
+        return isset($_POST['sbmAddEmployer']);
+    }
+    function shouldSelectApplyNowTab()
+    {
+        return isset($_POST['sbmApplyNowForReal'])
+            || isset($_POST['sbmApplyNowForTest']);
+    }
+?>
+<div class="container">
+    <ul class="nav nav-pills">
+        <li <?php if(shouldSelectUploadJobApplicationTemplateTab()){ echo 'class="active"'; } ?>>
+            <a data-toggle="pill" href="#divUploadJobApplicationTemplate">Bewerbungsvorlage hochladen</a>
+        </li>
+        <li <?php if(shouldSelectSetUserValuesTab()) { echo 'class="active"'; } ?>>
+            <a data-toggle="pill" href="#divSetUserValues">Benutzer bearbeiten</a>
+        </li>
+        <li <?php if(shouldSelectAddEmployerTab()) { echo 'class="active"'; } ?>>
+            <a data-toggle="pill" href="#divAddEmployer">Arbeitgeber hinzuf&uuml;gen</a>
+        </li>
+        <li <?php if(shouldSelectApplyNowTab()) { echo 'class="active"'; } ?>>
+            <a data-toggle="pill" href="#divApplyNow">Jetzt bewerben</a>
+        </li>
+        <li>
+            <a data-toggle="pill" href="#divSentApplications">Abgeschickte Bewerbungen</a>
+        </li>
+    </ul>
+    <div class="tab-content">
+    <div id="divUploadJobApplicationTemplate" class="tab-pane fade <?php if(shouldSelectUploadJobApplicationTemplateTab()) { echo ' in active'; } ?>">
+            <h2>Bewerbungsvorlage hochladen</h2>
             <form action="" method="post" enctype="multipart/form-data">
             <table id="tblUploadJobApplicationTemplate">
                 <tr>
@@ -411,15 +396,11 @@ div
             </table>
             </form>
         </div>
-    </div>
 
     <!-- setUserValues()
     -->
-    <div id="setUserValuesDiv" class="tab">
-    <input type="radio" id="tab-2" name="tab-group-1" <?php if(isset($_POST['sbmSetUserValues'])) { echo "checked"; }?>>
-        <label for="tab-2">Benutzer bearbeiten</label>
-        <div class="content">
-            <form action="" method="post">
+    <div id="divSetUserValues" class="tab-pane fade <?php if(shouldSelectSetUserValuesTab()) { echo ' in active'; } ?>">
+        <form action="#" method="post">
             <table>
                 <tr>
                     <td>Anrede</td>
@@ -462,11 +443,10 @@ div
                     <td><input type="text" name="txtPhone" value="<?php if(isset($_SESSION['user']) && isset($_SESSION['user']['phone'])) echo $_SESSION['user']['phone']; ?>" /></td>
                 </tr>
                 <tr>
-                    <td><input type="submit" name="sbmSetUserValues" value="Deine Werte &auml;ndern"/></td>
+                    <td><button type="submit" class="btn btn-success" name="sbmSetUserValues" value="Deine Werte &auml;ndern"/></td>
                 </tr>
             </table>
-            </form>
-        </div>
+        </form>
     </div>
 
 
@@ -474,21 +454,18 @@ div
 <!-- addEmployer()
 
 -->
-    <div id="addEmployerDiv" class="tab">
-        <input type="radio" id="tab-3" name="tab-group-1" <?php if(isset($_POST['sbmReadEmployerValuesFromWebSite']) || isset($_POST['sbmAddEmployer'])) { echo "checked"; } ?>>
-        <label for="tab-3">Arbeitgeber hinzuf&uuml;gen</label>
-        <div class="content">
-            <form action="" method="post">
+    <div id="divAddEmployer" class="tab-pane fade <?php if(shouldSelectAddEmployerTab()) { echo ' in active'; } ?>">
+        <form action="" method="post">
             <table>
-            <tr>
-                <td><input type="text" name="txtReadEmployerValuesFromWebSite" /></td>
-            </tr>
-            <tr>
-                <td><input type="submit" name="sbmReadEmployerValuesFromWebSite" value="Werte von Website einlesen" /></td>
-            </tr>
+                <tr>
+                    <td><input type="text" name="txtReadEmployerValuesFromWebSite" /></td>
+                </tr>
+                <tr>
+                    <td><input type="submit" name="sbmReadEmployerValuesFromWebSite" value="Werte von Website einlesen" /></td>
+                </tr>
             </table>
-            </form>
-            <form action="" method="post">
+        </form>
+        <form action="" method="post">
             <table>
             <?php
                 $currentEmployer = ['$chefAnredeBriefkopf' => ''
@@ -556,144 +533,137 @@ div
                     <td></td>
                 </tr>
             </table>
-            </form>
-        </div>
+        </form>
     </div>
 
 
 
 
-    <div id="applyNowDiv" class="tab">
-        <input type="radio" id="tab-4" name="tab-group-1" <?php if(isset($_POST['sbmSendJobApplication'])) { echo "checked"; }?>>
-        <label for="tab-4">Jetzt bewerben</label>
-        <div class="content">
-            <table id="selectEmployerTable" class="selectableTable">
-            <?php
-                $employers = [];
-                if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+    <div id="divApplyNow" class="tab-pane fade<?php if(shouldSelectApplyNowTab()) { echo ' in active'; } ?>">
+        <table id="selectEmployerTable" class="table table-hover table-border table-sm">
+        <?php
+            $employers = [];
+            if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+            {
+                $employers = getEmployers($dbConn, $_SESSION['user']['id']);
+            }
+            if(count($employers) > 0)
+            {
+                echo '<tr>';
+                echo "\n";
+                foreach($employers[0] as $key => $value)
                 {
-                    $employers = getEmployers($dbConn, $_SESSION['user']['id']);
-                }
-                if(count($employers) > 0)
-                {
-                    echo '<tr>';
+                    echo "<td>$key</td>";
                     echo "\n";
-                    foreach($employers[0] as $key => $value)
+                }
+                echo '</tr>';
+                echo "\n";
+                foreach($employers as $employer)
+                {
+                    echo '<tr onClick="selectEmployerRowIndex(this)">';
+                    echo "\n";
+                    foreach($employer as $key => $value)
                     {
-                        echo "<td>$key</td>";
-                        echo "\n";
+                            echo '<td>';
+                                echo $value;
+                            echo '</td>';
+                            echo "\n";
                     }
                     echo '</tr>';
                     echo "\n";
-                    foreach($employers as $employer)
-                    {
-                        echo '<tr onClick="selectEmployerRowIndex(this)">';
-                        echo "\n";
-                        foreach($employer as $key => $value)
-                        {
-                                echo '<td>';
-                                    echo $value;
-                                echo '</td>';
-                                echo "\n";
-                        }
-                        echo '</tr>';
-                        echo "\n";
-                    }
                 }
-            ?>
-            </table>
-            <table id="selectTemplateTable" class="selectableTable">
-            <?php
-                $jobApplicationTemplates = [];
-                if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+            }
+        ?>
+        </table>
+        <table id="selectTemplateTable" class="selectableTable">
+        <?php
+            $jobApplicationTemplates = [];
+            if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+            {
+                $jobApplicationTemplates = getJobApplicationTemplates($dbConn, $_SESSION['user']['id']);
+            }
+            if(count($employers) > 0 && count($jobApplicationTemplates) > 0)
+            {
+                echo '<tr>';
+                echo "\n";
+                foreach($jobApplicationTemplates[0] as $key => $value)
                 {
-                    $jobApplicationTemplates = getJobApplicationTemplates($dbConn, $_SESSION['user']['id']);
-                }
-                if(count($employers) > 0 && count($jobApplicationTemplates) > 0)
-                {
-                    echo '<tr>';
+                    echo "<td>$key</td>";
                     echo "\n";
-                    foreach($jobApplicationTemplates[0] as $key => $value)
+                }
+                echo '</tr>';
+                echo "\n";
+                foreach($jobApplicationTemplates as $jobApplicationTemplate)
+                {
+                    echo '<tr onClick="selectTemplateRowIndex(this)">';
+                    echo "\n";
+                    foreach($jobApplicationTemplate as $key => $value)
                     {
-                        echo "<td>$key</td>";
-                        echo "\n";
+                            echo '<td>';
+                                echo $value;
+                            echo '</td>';
+                            echo "\n";
                     }
                     echo '</tr>';
                     echo "\n";
-                    foreach($jobApplicationTemplates as $jobApplicationTemplate)
-                    {
-                        echo '<tr onClick="selectTemplateRowIndex(this)">';
-                        echo "\n";
-                        foreach($jobApplicationTemplate as $key => $value)
-                        {
-                                echo '<td>';
-                                    echo $value;
-                                echo '</td>';
-                                echo "\n";
-                        }
-                        echo '</tr>';
-                        echo "\n";
-                    }
                 }
-            ?>
-            </table>
+            }
+        ?>
+        </table>
         <form action="" method="post">
             <input type="hidden" id="hidEmployerIndex" name="hidEmployerIndex" value="" />
             <input type="hidden" id="hidTemplateIndex" name="hidTemplateIndex" value="" />
             <table>
                 <tr>
-                    <td><input type="submit" name="sbmSendJobApplication" value="Bewerbung abschicken" /><td>
+                    <td><input type="submit" name="sbmApplyNowForReal" value="Bewerbung abschicken" /><td>
                 <tr>
-                    <td><input type="submit" name="sbmSendTestJobApplication" value="Bewerbung zum Testen an mich selbst schicken" /></td>
+                    <td><input type="submit" name="sbmApplyNowForTest" value="Bewerbung zum Testen an mich selbst schicken" /></td>
                 </tr>
             </table>
         </form>
-        </div>
     </div>
 
 <!-- Sent applications
 
 -->
-    <div id="sentApplicationsDiv" class="tab">
-        <input type="radio" id="tab-5" name="tab-group-1" <?php if(isset($_POST['sbmDownloadSentApplications'])) { echo "checked"; }?>>
-        <label for="tab-5">Abgeschickte Bewerbungen</label>
-        <div class="content">
-            <table>
-            <?php
-                $sentApplications = [];
-                if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+
+    <div id="divSentApplications" class="tab-pane fade<?php if(false) { echo ' in active'; } ?>">
+        <table class="table table-hover table-border">
+        <?php
+            $sentApplications = [];
+            if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+            {
+                $sentApplications = getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0); //TODO Fix parameters
+            }
+            if(count($sentApplications) > 0)
+            {
+                echo '<tr>';
+                echo "\n";
+                foreach($sentApplications[0] as $key => $value)
                 {
-                    $sentApplications = getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0); //TODO Fix parameters
+                    echo "<td>$key</td>";
+                    echo "\n";
                 }
-                if(count($sentApplications) > 0)
+                echo '</tr>';
+                echo "\n";
+                foreach($sentApplications as $currentApplication)
                 {
                     echo '<tr>';
                     echo "\n";
-                    foreach($sentApplications[0] as $key => $value)
+                    foreach($currentApplication as $key => $value)
                     {
-                        echo "<td>$key</td>";
-                        echo "\n";
+                            echo '<td>';
+                                echo $value;
+                            echo '</td>';
+                            echo "\n";
                     }
                     echo '</tr>';
                     echo "\n";
-                    foreach($sentApplications as $currentApplication)
-                    {
-                        echo '<tr>';
-                        echo "\n";
-                        foreach($currentApplication as $key => $value)
-                        {
-                                echo '<td>';
-                                    echo $value;
-                                echo '</td>';
-                                echo "\n";
-                        }
-                        echo '</tr>';
-                        echo "\n";
-                    }
                 }
-            ?>
-            </table>
-            <form action="" method="post" enctype="multipart/form-data">
+            }
+        ?>
+        </table>
+        <form action="" method="post" enctype="multipart/form-data">
             <table>
                 <tr>
                     <td>Von Datum:</td>
@@ -710,8 +680,7 @@ div
                     <td><input type="submit" name="sbmDownloadSentApplications" value="Liste als PDF downloaden" /></td>
                 </tr>
             </table>
-            </form>
-        </div>
+        </form>
     </div>
 <!--
 <form action="" method="post">
@@ -797,7 +766,6 @@ div
     }
 
 </script>
-<script src="js/jquery-3.2.1.slim.min.js"></script>
 </html>
 
 
