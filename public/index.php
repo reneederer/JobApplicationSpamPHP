@@ -2,6 +2,8 @@
     use iio\libmergepdf\Merger;
     use iio\libmergepdf\Pages;
 
+    use PHPMailer\PHPMailer\PHPMailer;
+
 
     require_once('../app/odtFunctions.php');
     require_once('../app/websiteFunctions.php');
@@ -27,13 +29,14 @@ $response = $kernel->handle(
 
 
 
+
 $kernel->terminate($request, $response);
 
 
 
 
 
-    $dbConn = new PDO('mysql:host=localhost;dbname=jobApplication', 'root', 'Steinmetzstr9!@#$');
+    $dbConn = new PDO('mysql:host=localhost;dbname=' . env('DB_DATABASE'), env('DB_USERNAME'), env('DB_PASSWORD'));
     $dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $dbConn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $dbConn->exec("SET NAMES utf8");
@@ -194,9 +197,8 @@ $kernel->terminate($request, $response);
             $email->SMTPAuth = true;
             $email->SMTPSecure = 'tls';
             $email->IsSMTP();
-            $credentials = explode("\r\n", file_get_contents('mailCredentials.txt'));
-            $email->Username = $credentials[0];
-            $email->Password = $credentials[1];
+            $email->Username = Config::get('mail.username');
+            $email->Password = Config::get('mail.password');
             $email->SMTPOptions = array(
                 'ssl' => array(
                     'verify_peer' => false,

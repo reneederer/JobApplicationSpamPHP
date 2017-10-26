@@ -161,6 +161,10 @@
         $zipAsODT($odtFile, $outDirectory);
         $output = "";
         exec('"C:/Program Files/LibreOffice 5/program/python.exe" "c:/uniserverz/www/JobApplicationSpam/unoconv-master/unoconv" -f pdf -eUseLossLessCompression=true "' . $outDirectory . $odtFile . '" 2>&1', $output);
+        if(count($output) >= 1)
+        {
+            return [];
+        }
         //rrmAllExcept($tmpDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf');
         return [$outDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf'];
     }
