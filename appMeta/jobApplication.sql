@@ -23,23 +23,25 @@ create table jobApplicationStatusValue(id int primary key, status varchar(50));
 create table jobApplicationStatus(id int primary key auto_increment, jobApplicationId int, statusChangedOn date, dueOn datetime, statusValueId int, statusMessage varchar(200), foreign key(jobApplicationId) references jobApplication(id), foreign key(statusValueId) references jobApplicationStatusValue(id));
 
 
-create table jobCenterContract(id int primary key auto_increment, userId int not null, repeatEvery varchar(50) not null, jobApplicationCount int not null, expireDate date not null, foreign key(userId) references user(id));
+create table jobCenterContract(id int primary key auto_increment, userId int not null, repeatEvery int not null, jobApplicationCount int not null, expireDate date not null, foreign key(userId) references user(id));
 
 insert into user(id, name, password) values(1, "rene", "1234");
 insert into user(id, name, password) values(2, "helmut", "HelmutGoerke1963");
 insert into userAddress(userId, firstName, lastName, title, salutation, street, postCode, city, email, mobilePhone, phone, birthday, birthplace, maritalStatus) values(1, "René", "Ederer", "", "Herr", "Raabstr. 24A", "90429", "Nürnberg", "rene.ederer.nbg@gmail.com", "01520 2723494", "", "19.07.1982", "Nürnberg", "ledig");
 
-insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefNachname,\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nÜber eine Einladung zu einem Bewerbungsgespräch würder ich mich sehr freuen.\n\nMit freundlichen Grüßen\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", 'C:/Users/rene/Desktop/bewerbung_neu.odt');
-insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template ohne Anhänge", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefTitel $chefNachname,\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nÜber eine Einladung zu einem Bewerbungsgespräch würde ich mich sehr freuen.\nMit freundlichen Grüßen\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", 'C:/Users/rene/Desktop/bewerbung_neu.odt');
+insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefNachname,\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würder ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", 'C:/Users/rene/Desktop/bewerbung_neu.odt');
 
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('ihkZeugnis', 1, 'C:/UniserverZ/www/bewerbung/ihkZeugnis.pdf');
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('segitzZeugnis', 1, 'C:/Users/rene/bewerbung/segitzZeugnis.pdf');
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('kmkZeugnis', 1, 'C:/Users/rene/bewerbung/kmkZeugnis.pdf');
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('labenwolfZeugnis', 1, 'C:/Users/rene/bewerbung/labenwolfZeugnis.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('ihkZeugnis', 1, 'c:/users/rene/Downloads/ihk_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('segitzZeugnis', 1, 'c:/users/rene/Downloads/segitz_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('kmkZeugnis', 1, 'c:/users/rene/Downloads/kmk_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('labenwolfZeugnis', 1, 'c:/users/rene/Downloads/labenwolf_zeugnis_small.pdf');
 
-insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "IBF GmbH", "Robert", "Schlund", "", "Herr", "Oettinger Str. 11", "90411", "Nuernberg", "rene.ederer.nbg@gmail.com", "0911 123456", "0171 7471729");
-insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "Siemens", "Hans", "Meier", "Dr.", "Herr", "Melanchtonstr. 2b", "90765", "Fuerth", "rene.ederer.nbg@gmail.com", "040 938102", "01502 9420494");
-insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "BJC BEST JOB IT SERVICES GmbH", "Felix", "Preukschat", "", "Herr", "Alte Rabenstraße 32", "20148", "Hamburg", "rene.ederer.nbg@gmail.com", "+49 (40) 5 14 00 72 40", "");
+insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "BJC BEST JOB IT SERVICES GmbH", "Katrin", "Thoms", "", "Frau", "Alte Rabenstraße 32", "20148", "Hamburg", "Katrin.Thoms@bjc-its.de", "+49 (40) 5 14 00 7180", "");
+insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "Deutsche Anwaltshotline AG", "Jonas", "Zimmermann", "", "Herr", "Am Plärrer 7", "90443", "Nürnberg", "mail@deutsche-anwaltshotline.de", "+49 911 3765690", "");
+insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "ANG.-Punkt und gut! GmbH", "Jaqueline", "Strauß", "", "Frau", "Südwestpark 37-41", "90449", "Nürnberg", "bewerbung@ang.de", "+49 911 525700", "+49 1778876348");
+insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "iQ-Bewerbermanagement", "Nele", "Sommerfeld", "", "Frau", "Obernstr. 111", "28832", "Achim bei Bremen", "nele.sommerfeld@iq-bewerbermanagement.de", "+49 40 6003852232", "");
+insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "engineering people GmbH", "Haluk", "Acar", "", "Herr", "Südwestpark 60", "90449", "Nürnberg", "haluk.acar@engineering-people.de", "+49 911 239560316", "");
+insert into employer(userId, companyName, firstName, lastName, title, salutation, street, postCode, city, email, phone, mobilePhone) values(1, "BFI Informationssysteme GmbH", "Michael", "Schlund", "", "Herr", "Ötterichweg 7", "90411", "Nürnberg", "Michael.Schlund@bfi-info.de", "0911 9457668", "");
 
 insert into jobApplicationStatusValue(id, status) values(1, "Waiting for reply after sending job application");
 insert into jobApplicationStatusValue(id, status) values(2, "Appointment for job interview");
@@ -50,18 +52,26 @@ insert into jobApplicationStatusValue(id, status) values(6, "Job application acc
 
 insert into jobApplication(userId, employerId, jobApplicationTemplateId) values(1, 1, 1);
 insert into jobApplication(userId, employerId, jobApplicationTemplateId) values(1, 2, 1);
+insert into jobApplication(userId, employerId, jobApplicationTemplateId) values(1, 3, 1);
+insert into jobApplication(userId, employerId, jobApplicationTemplateId) values(1, 4, 1);
+insert into jobApplication(userId, employerId, jobApplicationTemplateId) values(1, 5, 1);
+insert into jobApplication(userId, employerId, jobApplicationTemplateId) values(1, 6, 1);
 
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
-    values(1, curdate(), null, 1, "");
+    values(1, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "");
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
-    values(2, str_to_date("01.01.2004", "%d.%m.%Y"), null, 1, "");
+    values(2, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "");
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
-    values(2, str_to_date("10.01.2004", "%d.%m.%Y"), null, 2, "");
+    values(3, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "");
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
-    values(2, str_to_date("20.01.2004", "%d.%m.%Y"), null, 4, "");
+    values(4, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "");
+insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
+    values(5, str_to_date("26.01.2017", "%d.%m.%Y"), null, 1, "");
+insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
+    values(6, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "Forwarded by Ms Götz");
 
 
-insert into jobCenterContract(id, userId, repeatEvery, jobApplicationCount, expireDate) values(1, 1, "1 Month", 6, curdate())
+/*insert into jobCenterContract(id, userId, repeatOn, jobApplicationCount, expireDate) values(1, 1, , 6, curdate())*/
 
 
 

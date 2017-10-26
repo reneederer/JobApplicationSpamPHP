@@ -210,6 +210,7 @@ $kernel->terminate($request, $response);
             $email->FromName = $fromName;
             $email->Subject = $subject;
             $email->Body = $body;
+            $email->AddBCC($_SESSION['user']['email'], $_SESSION['user']['firstName'] . ' ' . $_SESSION['user']['lastName']);
             $email->AddAddress($to);
             $email->AddAttachment($attachments[0], $attachments[0]);
             $email->Send();
@@ -290,7 +291,7 @@ div
 }
 </style>
 </head>
-<body>
+<body onLoad="templateAppendixSelected(1);">
 <?php
 ?>
 
@@ -378,7 +379,7 @@ div
         <div class="content">
             Bewerbungsvorlage hochladen
             <form action="" method="post" enctype="multipart/form-data">
-            <table>
+            <table id="tblUploadJobApplicationTemplate">
                 <tr>
                     <td>Name der Vorlage</td>
                     <td><input type="text" name="txtJobApplicationTemplateName" /></td>
@@ -401,46 +402,11 @@ div
                 </tr>
                 <tr>
                     <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
-                </tr>
-                <tr>
-                    <td>PDF Anhang</td>
-                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" /></td>
+                    <td><input type="file" name="fileAppendices[]" value="PDF Anhang" onChange="templateAppendixSelected(1);" /></td>
                 </tr>
                 <tr>
                     <td><input type="submit" name="sbmUploadJobApplicationTemplate" value="Vorlage hochladen" /></td>
+                    <td />
                 </tr>
             </table>
             </form>
@@ -697,7 +663,7 @@ div
                 $sentApplications = [];
                 if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
                 {
-                    getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0); //TODO Fix parameters
+                    $sentApplications = getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0); //TODO Fix parameters
                 }
                 if(count($sentApplications) > 0)
                 {
@@ -807,7 +773,31 @@ div
         row.style.backgroundColor = 'lightgreen';
     }
 
+
+    function templateAppendixSelected(fileNr)
+    {
+        lastTableRow = $("#tblUploadJobApplicationTemplate tr").eq(-1);
+        fileAppendices = $("#tblUploadJobApplicationTemplate [name = 'fileAppendices[]'");
+        if(fileAppendices.length == fileNr)
+        {
+            td1 = $("<td />").text("PDF Anhang");
+            fileInput = $("<input></input>")
+                    .attr("type", "file")
+                    .attr("name", "fileAppendices[]")
+                    .attr("value", "PDF Anhang")
+                    .attr("onChange", "templateAppendixSelected(" + (fileNr + 1) + ");");
+            td2 = $("<td />").append(fileInput);
+            tr = $("<tr />");
+            tr.append(td1);
+            tr.append(td2);
+            tr.insertBefore(lastTableRow);
+        }
+
+
+    }
+
 </script>
+<script src="js/jquery-3.2.1.slim.min.js"></script>
 </html>
 
 

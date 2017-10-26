@@ -11,3 +11,4 @@ npm-debug.log
 yarn-error.log
 .env
 unoconv-master
+public/js/jquery-3.2.1.slim.min.js
