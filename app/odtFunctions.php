@@ -18,6 +18,19 @@
         return $str;
     }
 
+    function replaceAllInStringIgnoreTags($str, $dict)
+    {
+        $str = preg_replace("/<text:span.*?>(.*?)<\\/text:span>/", '$1', $str);
+        foreach($dict as $search => $replaceWith)
+        {
+            $pattern = "\\\$";
+            $pattern = $pattern . substr($search, 1);
+            $pattern = "/$pattern/";
+            $str = preg_replace($pattern, $replaceWith, $str);
+        }
+        return $str;
+    }
+
     function rrmAllExcept($directory, $name)
     {
         foreach(scandir($directory) as $currentItem)
@@ -122,7 +135,7 @@
             $replaceInFile = function($file, $dict)
             {
                 $str = file_get_contents($file);
-                $str = replaceAllInString($str, $dict);
+                $str = replaceAllInStringIgnoreTags($str, $dict);
                 file_put_contents($file, $str);
             };
             $directoryContent = scandir($directory);
@@ -163,6 +176,7 @@
         exec('"C:/Program Files/LibreOffice 5/program/python.exe" "c:/uniserverz/www/JobApplicationSpam/unoconv-master/unoconv" -f pdf -eUseLossLessCompression=true "' . $outDirectory . $odtFile . '" 2>&1', $output);
         if(count($output) >= 1)
         {
+            var_dump($output);
             return [];
         }
         //rrmAllExcept($tmpDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf');
@@ -216,7 +230,7 @@
             $replaceInFile = function($file, $dict)
             {
                 $str = file_get_contents($file);
-                $str = replaceAllInString($str, $dict);
+                $str = replaceAllInStringIgnoreTags($str, $dict);
                 file_put_contents($file, $str);
             };
             $directoryContent = scandir($directory);
