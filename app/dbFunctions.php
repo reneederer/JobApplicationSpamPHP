@@ -94,6 +94,14 @@
         $statement->execute();
     }
 
+    function addUser($dbConn, $name, $password)
+    {
+        $statement = $dbConn->prepare('insert into user(name, password) values(:name, :password)');
+        $statement->bindParam(':name', $name);
+        $statement->bindParam(':password', $password);
+        $statement->execute();
+    }
+
     function addToDownloads($dbConn, $folder, $userId)
     {
         $statement = $dbConn->prepare('insert into userDownloads(folder, userId, downloadTime) values(:folder, :userId, now())');

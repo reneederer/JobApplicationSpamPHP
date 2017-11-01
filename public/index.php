@@ -46,6 +46,8 @@ echo htmlspecialchars($str);
 
 die("");
  */
+    echo Config::get('rene.unoconv');
+    die("");
 
     $dbConn = new PDO('mysql:host=localhost;dbname=' . env('DB_DATABASE'), env('DB_USERNAME'), env('DB_PASSWORD'));
     $dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

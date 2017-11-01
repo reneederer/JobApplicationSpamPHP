@@ -18,14 +18,21 @@
         return $str;
     }
 
-    function replaceAllInStringIgnoreTags($str, $dict)
+    function replaceAllInStringRemoveSpanTags($str, $dict)
     {
-        $str = preg_replace("/<text:span.*?>(.*?)<\\/text:span>/", '$1', $str);
+        $dom = new DomDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadXML(mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8'));
+        $spanElements = $dom->getElementsByTagName('span');
+        for($i = $spanElements->length - 1; $i >= 0; --$i)
+        {
+            $currentNode = $spanElements->item($i);
+            $currentNode->parentNode->replaceChild($dom->createTextNode($currentNode->nodeValue), $currentNode);
+        }
+        $str = $dom->saveXML();
         foreach($dict as $search => $replaceWith)
         {
-            $pattern = "\\\$";
-            $pattern = $pattern . substr($search, 1);
-            $pattern = "/$pattern/";
+            $pattern = '/' . str_replace("\$", "\\$", $search) . '/';
             $str = preg_replace($pattern, $replaceWith, $str);
         }
         return $str;
@@ -135,7 +142,7 @@
             $replaceInFile = function($file, $dict)
             {
                 $str = file_get_contents($file);
-                $str = replaceAllInStringIgnoreTags($str, $dict);
+                $str = replaceAllInStringRemoveSpanTags($str, $dict);
                 file_put_contents($file, $str);
             };
             $directoryContent = scandir($directory);
@@ -173,7 +180,7 @@
         $replaceInDirectory($outDirectory, $dict);
         $zipAsODT($odtFile, $outDirectory);
         $output = "";
-        exec('"C:/Program Files/LibreOffice 5/program/python.exe" "c:/uniserverz/www/JobApplicationSpam/unoconv-master/unoconv" -f pdf -eUseLossLessCompression=true "' . $outDirectory . $odtFile . '" 2>&1', $output);
+        exec(Config::get('rene.unoconv') . $outDirectory . $odtFile . '" 2>&1', $output);
         if(count($output) >= 1)
         {
             var_dump($output);
@@ -230,7 +237,7 @@
             $replaceInFile = function($file, $dict)
             {
                 $str = file_get_contents($file);
-                $str = replaceAllInStringIgnoreTags($str, $dict);
+                $str = replaceAllInStringRemoveSpanTags($str, $dict);
                 file_put_contents($file, $str);
             };
             $directoryContent = scandir($directory);
