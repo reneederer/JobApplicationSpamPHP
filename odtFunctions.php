@@ -180,7 +180,7 @@
         $replaceInDirectory($outDirectory, $dict);
         $zipAsODT($odtFile, $outDirectory);
         $output = "";
-        exec(Config::get('rene.unoconv') . $outDirectory . $odtFile . '" 2>&1', $output);
+        exec($config['unoconv'] . ' ' . $outDirectory . $odtFile . '" 2>&1', $output);
         if(count($output) >= 1)
         {
             var_dump($output);
@@ -271,7 +271,7 @@
         $replaceInDirectory($tmpDirectory, $dict);
         $zipAsODT($odtFile, $tmpDirectory);
         $output = "";
-        exec('"C:/Program Files/LibreOffice 5/program/python.exe" "c:/uniserverz/www/JobApplicationSpam/unoconv-master/unoconv" -f pdf -eUseLossLessCompression=true "' . $tmpDirectory . $odtFile . '" 2>&1', $output);
+        exec($config['unoconv'] . ' -f pdf -eUseLossLessCompression=true "' . $tmpDirectory . $odtFile . '" 2>&1', $output);
         rrmAllExcept($tmpDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf');
         return [$tmpDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf'];
     }
