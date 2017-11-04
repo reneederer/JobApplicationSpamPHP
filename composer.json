@@ -1,6 +1,8 @@
 {
     "require": {
         "phpunit/phpunit": "^6.4",
-        "codeception/codeception": "*"
+        "codeception/codeception": "*",
+        "twbs/bootstrap": "^3.3",
+        "components/font-awesome": "^4.7"
     }
 }

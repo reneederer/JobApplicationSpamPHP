@@ -131,7 +131,7 @@
 
     function getUserValues($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select firstName, lastName, salutation, title, street, postCode, city, email, mobilePhone, phone, birthday, birthplace, maritalStatus from userAddress where userId=:userId');
+        $statement = $dbConn->prepare('select firstName, lastName, gender, degree, street, postCode, city, email, mobilePhone, phone, birthday, birthplace, maritalStatus from userAddress where userId=:userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
@@ -146,13 +146,13 @@
         }
     }
 
-    function updateUserValues($dbConn, $userId, $firstName, $lastName, $salutation, $title, $street, $postCode, $city, $email, $mobilePhone, $phone)
+    function updateUserValues($dbConn, $userId, $user)
     {
         $statement = $dbConn->prepare('update userAddress set
+            gender = :gender,
+            degree = :degree,
             firstName = :firstName,
             lastName = :lastName,
-            title = :title,
-            salutation = :salutation,
             street = :street,
             postCode = :postCode,
             city = :city,
@@ -160,33 +160,22 @@
             mobilePhone = :mobilePhone,
             phone = :phone where userId = :userId');
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':firstName', $firstName);
-        $statement->bindParam(':lastName', $lastName);
-        $statement->bindParam(':title', $title);
-        $statement->bindParam(':salutation', $salutation);
-        $statement->bindParam(':street', $street);
-        $statement->bindParam(':postCode', $postCode);
-        $statement->bindParam(':city', $city);
-        $statement->bindParam(':email', $email);
-        $statement->bindParam(':mobilePhone', $mobilePhone);
-        $statement->bindParam(':phone', $phone);
+        $statement->bindParam(':gender', $gender);
+        $statement->bindParam(':degree', $degree);
+        $statement->bindParam(':firstName', $user->firstName);
+        $statement->bindParam(':lastName', $user->lastName);
+        $statement->bindParam(':street', $user->street);
+        $statement->bindParam(':postCode', $user->postCode);
+        $statement->bindParam(':city', $user->city);
+        $statement->bindParam(':email', $user->email);
+        $statement->bindParam(':mobilePhone', $user->mobilePhone);
+        $statement->bindParam(':phone', $user->phone);
         $statement->execute();
-        $_SESSION['user']['id'] = $userId;
-        $_SESSION['user']['firstName'] = $firstName;
-        $_SESSION['user']['lastName'] = $lastName;
-        $_SESSION['user']['title'] = $title;
-        $_SESSION['user']['salutation'] = $salutation;
-        $_SESSION['user']['street'] = $street;
-        $_SESSION['user']['postCode'] = $postCode;
-        $_SESSION['user']['city'] = $city;
-        $_SESSION['user']['email'] = $email;
-        $_SESSION['user']['mobilePhone'] = $mobilePhone;
-        $_SESSION['user']['phone'] = $phone;
     }
 
     function getJobApplications($dbConn, $userId, $fromDate, $toDate)
     {
-        $statement = $dbConn->prepare('select jobApplicationStatus.statusChangedOn, jobApplicationStatus.dueOn, jobApplicationStatus.statusValueId, employer.companyName, employer.title, employer.firstName
+        $statement = $dbConn->prepare('select jobApplicationStatus.statusChangedOn, jobApplicationStatus.dueOn, jobApplicationStatus.statusValueId, employer.companyName, employer.degree, employer.firstName
             , employer.lastName, employer.email, employer.mobilePhone, employer.phone, employer.street, employer.postCode, employer.city
             from jobApplication
             join employer on jobApplication.employerId = employer.id and jobApplication.userId = :userId
@@ -197,7 +186,7 @@
                      , jobApplicationStatus.dueOn
                      , jobApplicationStatus.statusValueId
                      , employer.companyName
-                     , employer.title
+                     , employer.degree
                      , employer.firstName 
                      , employer.lastName
                      , employer.email
@@ -217,7 +206,7 @@
                 group by
                        jobApplicationStatus.dueOn
                      , employer.companyName
-                     , employer.title
+                     , employer.degree
                      , employer.firstName 
                      , employer.lastName
                      , employer.email
@@ -260,7 +249,7 @@
 
     function getEmployers($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select companyName, street, postCode, city, email, mobilePhone, phone, salutation, title, firstName, lastName
+        $statement = $dbConn->prepare('select companyName, street, postCode, city, email, mobilePhone, phone, gender, degree, firstName, lastName
             from employer where userId = :userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
@@ -278,7 +267,7 @@
 
     function getEmployer($dbConn, $userId, $employerId)
     {
-        $statement = $dbConn->prepare('select companyName as "\$firmaName", street as "\$firmaStrasse", postCode as "\$firmaPlz", city as "\$firmaStadt", email as "\$firmaEmail", mobilePhone as "\$firmaMobil", phone as "\$firmaTelefon", salutation as "\$chefAnrede", title as "\$chefTitel", firstName as "\$chefVorname", lastName as "\$chefNachname"
+        $statement = $dbConn->prepare('select companyName as "\$firmaName", street as "\$firmaStrasse", postCode as "\$firmaPlz", city as "\$firmaStadt", email as "\$firmaEmail", mobilePhone as "\$firmaMobil", phone as "\$firmaTelefon", gender as "\$chefAnrede", degree as "\$chefTitel", firstName as "\$chefVorname", lastName as "\$chefNachname"
             from employer where userId = :userId and id = :employerId');
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':employerId', $employerId);
@@ -300,19 +289,19 @@
         return $rows[0]['id'];
     }
 
-    function addEmployer($dbConn, $userId, $companyName, $street, $postCode, $city, $salutation, $title, $firstName, $lastName, $email, $mobilePhone, $phone)
+    function addEmployer($dbConn, $userId, $companyName, $street, $postCode, $city, $gender, $degree, $firstName, $lastName, $email, $mobilePhone, $phone)
     {
         $statement = $dbConn->prepare('insert into employer
-            (userId, companyName, street, postCode, city, email, mobilePhone, phone, salutation, title, firstName, lastName)
-            values (:userId, :companyName, :street, :postCode, :city, :email, :mobilePhone, :phone, :salutation, :title, :firstName, :lastName)');
+            (userId, companyName, street, postCode, city, email, mobilePhone, phone, gender, degree, firstName, lastName)
+            values (:userId, :companyName, :street, :postCode, :city, :email, :mobilePhone, :phone, :gender, :degree, :firstName, :lastName)');
 
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':companyName', $companyName);
         $statement->bindParam(':street', $street);
         $statement->bindParam(':postCode', $postCode);
         $statement->bindParam(':city', $city);
-        $statement->bindParam(':salutation', $salutation);
-        $statement->bindParam(':title', $title);
+        $statement->bindParam(':gender', $gender);
+        $statement->bindParam(':degree', $degree);
         $statement->bindParam(':firstName', $firstName);
         $statement->bindParam(':lastName', $lastName);
         $statement->bindParam(':email', $email);
