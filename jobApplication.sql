@@ -1,10 +1,12 @@
 drop database if exists jobApplication;
 
+set names utf8;
+
 create database jobApplication;
 
 use jobApplication;
 
-create table user(id int primary key auto_increment, name varchar(200) not null, password varchar(200) not null);
+create table user(id int primary key auto_increment, name varchar(200) not null, password varchar(256) not null);
 
 create table userDownloads(id int primary key auto_increment, folder varchar(500) not null, userId int not null, downloadTime datetime not null, foreign key(userId) references user(id));
 
@@ -29,13 +31,13 @@ insert into user(id, name, password) values(1, "rene", "1234");
 insert into user(id, name, password) values(2, "helmut", "HelmutGoerke1963");
 insert into userAddress(userId, gender, degree, firstName, lastName, street, postCode, city, email, mobilePhone, phone, birthday, birthplace, maritalStatus) values(1, "m", "", "René", "Ederer", "Raabstr. 24A", "90429", "Nürnberg", "rene.ederer.nbg@gmail.com", "01520 2723494", "", "19.07.1982", "Nürnberg", "ledig");
 
-insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefNachname,\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würder ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", 'C:/Users/rene/Desktop/bewerbung_neu.odt');
-insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template ohne Anhang", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefNachname,\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würder ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", 'C:/Users/rene/Desktop/bewerbung_neu.odt');
+insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefNachname,\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würde ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", '/var/www/user/rene/bewerbung_neu.odt');
+insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile) values(1, "Mein Template ohne Anhang", "Fachinformatiker für Anwendungsentwicklung", "Bewerbung als Fachinformatiker für Anwendungsentwicklung", "Sehr $geehrter $chefAnrede $chefNachname,\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würde ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr", '/var/www/user/rene/bewerbung_neu.odt');
 
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('ihkZeugnis', 1, 'c:/users/rene/Downloads/ihk_zeugnis_small.pdf');
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('segitzZeugnis', 1, 'c:/users/rene/Downloads/segitz_zeugnis_small.pdf');
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('kmkZeugnis', 1, 'c:/users/rene/Downloads/kmk_zeugnis_small.pdf');
-insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('labenwolfZeugnis', 1, 'c:/users/rene/Downloads/labenwolf_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('ihkZeugnis', 1, '/var/www/user/rene/ihk_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('segitzZeugnis', 1, '/var/www/user/rene/segitz_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('kmkZeugnis', 1, '/var/www/user/rene/kmk_zeugnis_small.pdf');
+insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('labenwolfZeugnis', 1, '/var/www/user/rene/labenwolf_zeugnis_small.pdf');
 
 insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postCode, city, email, phone, mobilePhone) values(1, "BJC BEST JOB IT SERVICES GmbH", "Frau", "", "Katrin", "Thoms", "Alte Rabenstraße 32", "20148", "Hamburg", "Katrin.Thoms@bjc-its.de", "+49 (40) 5 14 00 7180", "");
 insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postCode, city, email, phone, mobilePhone) values(1, "Deutsche Anwaltshotline AG", "Herr", "", "Jonas", "Zimmermann", "Am Plärrer 7", "90443", "Nürnberg", "mail@deutsche-anwaltshotline.de", "+49 911 3765690", "");

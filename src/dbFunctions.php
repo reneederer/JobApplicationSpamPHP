@@ -111,11 +111,27 @@
         $statement->execute();
     }
 
-    function identifyUser($dbConn, $userName, $password)
+    function getIdAndPassword($dbConn, $userName)
     {
-        $statement = $dbConn->prepare('select id from user where name=:userName and password=:password');
+        $statement = $dbConn->prepare('select id, password from user where name=:userName');
         $statement->bindParam(':userName', $userName);
-        $statement->bindParam(':password', $password);
+        $result = $statement->execute();
+        $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        $rows = $statement->fetchAll();
+        if(count($rows) === 0)
+        {
+            return Array();
+        }
+        else
+        {
+            return Array('id' => $rows[0]['id'], 'password' => $rows[0]['password']);
+        }
+    }
+
+    function identifyUser($dbConn, $userName)
+    {
+        $statement = $dbConn->prepare('select id from user where name=:userName');
+        $statement->bindParam(':userName', $userName);
         $result = $statement->execute();
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
         $rows = $statement->fetchAll();
@@ -289,24 +305,24 @@
         return $rows[0]['id'];
     }
 
-    function addEmployer($dbConn, $userId, $companyName, $street, $postCode, $city, $gender, $degree, $firstName, $lastName, $email, $mobilePhone, $phone)
+    function addEmployer($dbConn, $userId, $employer)
     {
         $statement = $dbConn->prepare('insert into employer
             (userId, companyName, street, postCode, city, email, mobilePhone, phone, gender, degree, firstName, lastName)
             values (:userId, :companyName, :street, :postCode, :city, :email, :mobilePhone, :phone, :gender, :degree, :firstName, :lastName)');
 
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':companyName', $companyName);
-        $statement->bindParam(':street', $street);
-        $statement->bindParam(':postCode', $postCode);
-        $statement->bindParam(':city', $city);
-        $statement->bindParam(':gender', $gender);
-        $statement->bindParam(':degree', $degree);
-        $statement->bindParam(':firstName', $firstName);
-        $statement->bindParam(':lastName', $lastName);
-        $statement->bindParam(':email', $email);
-        $statement->bindParam(':mobilePhone', $mobilePhone);
-        $statement->bindParam(':phone', $phone);
+        $statement->bindParam(':companyName', $employer->company);
+        $statement->bindParam(':street', $employer->street);
+        $statement->bindParam(':postCode', $employer->postCode);
+        $statement->bindParam(':city', $employer->city);
+        $statement->bindParam(':gender', $employer->gender);
+        $statement->bindParam(':degree', $employer->degree);
+        $statement->bindParam(':firstName', $employer->firstName);
+        $statement->bindParam(':lastName', $employer->lastName);
+        $statement->bindParam(':email', $employer->email);
+        $statement->bindParam(':mobilePhone', $employer->mobilePhone);
+        $statement->bindParam(':phone', $employer->phone);
         $statement->execute();
     }
 ?>

@@ -3,12 +3,18 @@
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 
+    require_once('../vendor/phpmailer/phpmailer/src/Exception.php');
+    require_once('../vendor/phpmailer/phpmailer/src/PHPMailer.php');
+    require_once('../vendor/phpmailer/phpmailer/src/SMTP.php');
+
     require_once('config.php');
     require_once('odtFunctions.php');
     require_once('websiteFunctions.php');
     require_once('dbFunctions.php');
     require_once('helperFunctions.php');
     require_once('validate.php');
+
+    use PHPMailer\PHPMailer\PHPMailer;
 
     session_start();
 
@@ -23,20 +29,28 @@
 
     if(isset($_POST['sbmLoginForm']))
     {
-        $_SESSION['user'] = identifyUser($dbConn, $_POST['txtName'], $_POST['txtPassword']);
-        if(count($_SESSION['user']) > 0)
+        $userIdAndPassword = getIdAndPassword($dbConn, $_POST['txtName']);
+        if(password_verify($_POST['txtPassword'], $userIdAndPassword['password']))
         {
-            $userValues = getUserValues($dbConn, $_SESSION['user']['id']);
-            foreach($userValues as $key => $value)
+            $_SESSION['user'] = identifyUser($dbConn, $_POST['txtName']);
+            if(count($_SESSION['user']) > 0)
             {
-                $_SESSION['user'][$key] = $value;
+                $userValues = getUserValues($dbConn, $_SESSION['user']['id']);
+                foreach($userValues as $key => $value)
+                {
+                    $_SESSION['user'][$key] = $value;
+                }
+                $_SESSION['user']['userName'] = $_POST['txtName'];
             }
-            $_SESSION['user']['userName'] = $_POST['txtName'];
         }
     }
     else if(isset($_POST['sbmLogout']))
     {
         logout();
+    }
+    else if(isset($_POST['sbmRegisterForm']))
+    {
+        addUser($dbConn, $_POST['txtName'], password_hash($_POST['txtPassword'], PASSWORD_DEFAULT));
     }
     else if(isset($_POST['sbmSetUserValues']))
     {
@@ -53,7 +67,7 @@
         $checkUserValuesResult = validateUserData($userValues);
         if(!$checkUserValuesResult->isValid)
         {
-            $currentMessage = join("<br>", $checkUserValuesResult->errors);
+            $currentMessage .= join("<br>", $checkUserValuesResult->errors);
         }
         else
         {
@@ -62,7 +76,27 @@
     }
     else if(isset($_POST['sbmAddEmployer']))
     {
-        addEmployer($dbConn, $_SESSION['user']['id'], $_POST['txtCompany'], $_POST['txtStreet'], $_POST['txtPostCode'], $_POST['txtCity'], $_POST['txtGender'], $_POST['txtDegree'], $_POST['txtFirstName'], $_POST['txtLastName'], $_POST['txtEmail'], $_POST['txtMobilePhone'], $_POST['txtPhone']);
+        $employer = 
+            new Employer($_POST['txtCompany'],
+                         $_POST['txtCompanyStreet'],
+                         $_POST['txtCompanyPostCode'],
+                         $_POST['txtCompanyCity'],
+                         $_POST['rbBossGender'],
+                         $_POST['txtBossDegree'],
+                         $_POST['txtBossFirstName'],
+                         $_POST['txtBossLastName'],
+                         $_POST['txtBossEmail'],
+                         $_POST['txtBossMobilePhone'],
+                         $_POST['txtBossPhone']);
+        $validateResult = validateEmployer($employer);
+        if($validateResult->isValid)
+        {
+            addEmployer($dbConn, $_SESSION['user']['id'], $employer);
+        }
+        else
+        {
+            $currentMessage .= join("<br>", $validateResult->errors);
+        }
     }
     else if(isset($_POST['sbmDownloadPDF']))
     {
@@ -108,14 +142,14 @@
                 }
             }
         }
-        $currentMessage = join("<br>", $templateDataResult->errors);
+        $currentMessage .= join("<br>", $templateDataResult->errors);
     }
     else if(isset($_POST['sbmApplyNowForReal']) || isset($_POST['sbmApplyNowForTest']))
     {
         $employerIndex = getEmployerIndex($dbConn, $_SESSION['user']['id'], $_POST['hidEmployerIndex']);
         $employerValuesDict = getEmployer($dbConn, $_SESSION['user']['id'], $employerIndex);
         $userValuesDict =
-            [ '$meinTitel' => $_SESSION['user']['title']
+            [ '$meinTitel' => $_SESSION['user']['degree']
             , '$meineAnrede' => $_SESSION['user']['gender']
             , '$meinVorname' => $_SESSION['user']['firstName']
             , '$meinNachname' => $_SESSION['user']['lastName']
@@ -138,37 +172,41 @@
         addToDownloads($dbConn, $pdfDirectoryAndFile[0], $_SESSION['user']['id']);
         $templateId = getTemplateIdByIndex($dbConn, $_SESSION['user']['id'], $_POST['hidTemplateIndex']);
         addJobApplication($dbConn, $_SESSION['user']['id'], $employerIndex, $templateId);
+
+
         $pdfAppendices = getPdfAppendices($dbConn, $templateId);
-        $m = new Merger();
-        $m->addFromFile($pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1]);
+        $pdfUniteCommand = $config['pdfunite'] . ' ' . ($pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1]);
         foreach($pdfAppendices as $currentPdfAppendix)
         {
-            $m->addFromFile($currentPdfAppendix['pdfFile']);
+            $pdfUniteCommand .= ' ' . $currentPdfAppendix['pdfFile'];
         }
         $pdfFileName = $pdfDirectoryAndFile[0] . str_replace(" ", "_", mb_strtolower($_SESSION['user']['lastName'] . '_bewerbung_als_' . $jobApplicationTemplate['userAppliesAs'])) . '.pdf';
-        file_put_contents($pdfFileName, $m->merge());
-        sendMail( $_SESSION['user']['email']
+        exec($pdfUniteCommand . ' ' . $pdfFileName . ' 2>1', $output);
+
+        $errorResult = sendMail( $_SESSION['user']['email']
             , $_SESSION['user']['firstName'] . ' ' . $_SESSION['user']['lastName']
-            , replaceAllInStringIgnoreTags($jobApplicationTemplate['emailSubject'], $dict)
-            , replaceAllInStringIgnoreTags($jobApplicationTemplate['emailBody'], $dict)
+            , replaceAllInString($jobApplicationTemplate['emailSubject'], $dict)
+            , replaceAllInString($jobApplicationTemplate['emailBody'], $dict)
             , isset($_POST['sbmApplyNowForReal']) ? $employerValuesDict['$firmaEmail'] : $_SESSION['user']['email']
             , [$pdfFileName]);
+        if($errorResult->isValid)
+        {
+            die("valid");
+            $currentMessage .= "Email wurde versandt.";
+        }
+        else
+        {
+            var_dump($errorResult);
+            die("");
+            $currentMessage .= join("<br>", $errorResult->errors);
+        }
     }
     else if(isset($_POST['sbmDownloadSentApplications']))
     {
         $data = getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0);
         $pdf = new FPDF();
-        //    $pdf->AddPage();
-         //   $pdf->SetFont('Arial', '', 13);
-          //  $pdf->Cell(40, 10, 'hello world');
-        // Colors, line width and bold font
         $pdf->AddPage();
         $pdf->SetFont('Arial','B', 15);
-        //foreach($header as $col)
-        //{
-         //   $pdf->Cell(40,7,$col,1);
-          //  $pdf->Ln();
-        //}
         $pdf->MultiCell(0, 10, "Rene Ederer");
         $pdf->MultiCell(0, 10, "Bewerbungen 01.10.2017 - 24.10.2017\n");
         $pdf->MultiCell(0, 15, "");
@@ -205,8 +243,8 @@
             $email->SMTPAuth = true;
             $email->SMTPSecure = 'tls';
             $email->IsSMTP();
-            $email->Username = $config['email']['username'];
-            $email->Password = $config['email']['password'];
+            $email->Username = 'rene.ederer.nbg@gmail.com';
+            $email->Password = 'Steinmetzstr9';
             $email->SMTPOptions = array(
                 'ssl' => array(
                     'verify_peer' => false,
@@ -218,19 +256,22 @@
             $email->FromName = $fromName;
             $email->Subject = $subject;
             $email->Body = $body;
-            $email->AddBCC($_SESSION['user']['email'], $_SESSION['user']['firstName'] . ' ' . $_SESSION['user']['lastName']);
+            $email->AddBCC($from);
             $email->AddAddress($to);
-            $email->AddAttachment($attachments[0], $attachments[0]);
+            //$email->AddAttachment($attachments[0], $attachments[0]);
             $email->Send();
         }
         catch(phpmailerException $e)
         {
-            echo $e->errorMessage();
+            die($e->errorMessage());
+            return new ErrorResult(false, ["Email konnte nicht versandt werden"], []);
         }
         catch(\Exception $e)
         {
-            echo $e->getMessage();
+            die($e->errorMessage());
+            return new ErrorResult(false, ["Email konnte nicht versandt werden"], []);
         }
+        return new ErrorResult(true, [], []);
     }
 
 
@@ -253,9 +294,69 @@
 
 
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="css/current.css">
+    <link rel="stylesheet" href="../css/current.css">
     <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+    selectedEmployerRowIndex = 0;
+    lastEmployerBackgroundColor = "white";
+    selectedTemplateRowIndex = 0;
+    lastTemplateBackgroundColor = "white";
+    function selectTemplateRowIndex(row)
+    {
+        document.getElementById("selectTemplateTable").getElementsByTagName("tr")[selectedTemplateRowIndex].style.backgroundColor = lastTemplateBackgroundColor;
+        selectedTemplateRowIndex = row.rowIndex;
+        document.getElementById('hidTemplateIndex').value = row.rowIndex;
+        lastTemplateBackgroundColor = row.style.backgroundColor;
+        row.style.backgroundColor = 'lightgreen';
+    }
+    function selectEmployerRowIndex(row)
+    {
+        document.getElementById("selectEmployerTable").getElementsByTagName("tr")[selectedEmployerRowIndex].style.backgroundColor = lastEmployerBackgroundColor;
+        selectedEmployerRowIndex = row.rowIndex;
+        document.getElementById('hidEmployerIndex').value = row.rowIndex;
+        lastEmployerBackgroundColor = row.style.backgroundColor;
+        row.style.backgroundColor = 'lightgreen';
+    }
+
+
+    function templateAppendixSelected(fileNr)
+    {
+        lastTableRow = $("#tblUploadJobApplicationTemplate tr").eq(-1);
+        fileAppendices = $("#tblUploadJobApplicationTemplate [name = 'fileAppendices[]'");
+        if(fileAppendices.length == fileNr)
+        {
+            td1 = $("<td />").text("PDF Anhang");
+            fileInput = $("<input></input>")
+                    .attr("type", "file")
+                    .attr("name", "fileAppendices[]")
+                    .attr("value", "PDF Anhang")
+                    .attr("onChange", "templateAppendixSelected(" + (fileNr + 1) + ");");
+            td2 = $("<td />").append(fileInput);
+            tr = $("<tr />");
+            tr.append(td1);
+            tr.append(td2);
+            tr.insertBefore(lastTableRow);
+        }
+
+
+    }
+
+    function validateInput(el)
+    {
+        if(el.value != "hallo")
+        {
+            el.parentNode.classList.add("has-error");
+            el.setCustomValidity("Everything fine");
+        }
+        else
+        {
+            el.parentNode.classList.remove("has-error");
+            el.setCustomValidity("");
+        }
+    }
+
+</script>
 
 
 
@@ -306,14 +407,13 @@
 <div class="row-offcanvas row-offcanvas-left">
   <div id="sidebar" class="sidebar-offcanvas">
       <div class="col-md-12">
-        <h3>Sidebar (fixed)</h3>
         <ul class="nav nav-pills nav-stacked">
-          <li class="active"><a href="#uploadTemplate">Bewerbungsvorlage hochladen</a></li>
-          <li><a href="#setYourValues">Deine Werte &auml;ndern</a></li>
-          <li><a href="#addEmployer">Arbeitgeber hinzuf&uuml;gen</a></li>
-          <li><a href="#applyNow">Jetzt bewerben</a></li>
-          <li><a href="#sentApplications">Abgeschickte Bewerbungen anzeigen</a></li>
-          <li><a href="#dates">Termine</a></li>
+          <li class="active"><h3><a href="#uploadTemplate">Bewerbungsvorlage hochladen</a></h3></li>
+          <li><h3><a href="#setYourValues">Deine Werte &auml;ndern</a></h3></li>
+          <li><h3><a href="#addEmployer">Arbeitgeber hinzuf&uuml;gen</a></h3></li>
+          <li><h3><a href="#applyNow">Jetzt bewerben</a></h3></li>
+          <li><h3><a href="#sentApplications">Abgeschickte Bewerbungen anzeigen</a></h3></li>
+          <li><h3><a href="#dates">Termine</a></h3></li>
         </ul>
       </div>
   </div>
@@ -321,7 +421,7 @@
     
       <div class="col-md-12">
           <p class="visible-xs">
-              <button type="button" class="btn btn-primary btn-xs" data-toggle="offcanvas"><h3>&gt;</h3></button>
+              <button type="button" class="btn btn-primary btn-xs" data-toggle="offcanvas">&gt;</button>
           </p>
             <?php
                 if(isset($_SESSION['user']) && isset($_SESSION['user']['id']) && $_SESSION['user']['id'] >= 1)
@@ -396,11 +496,11 @@
 
 
 
-          <div>
-          <p><?php echo $currentMessage; ?></p>
+          <div style="background-color:yellow;position:fixed;top:350px;left:300px;">
+              <?php echo $currentMessage; ?>...
           </div>
           <div class="distanced-div">
-              <h1><a name="uploadTemplate">Bewerbungsvorlage hochladen</a></h1>
+              <h1 id="uploadTemplate" class="undecorated-anchor">Bewerbungsvorlage hochladen</h1>
               <form action="" method="post" enctype="multipart/form-data">
                   <div class="form-group has-error">
                       <label for="txtJobApplicationTemplateName">Name der Vorlage</label>
@@ -423,7 +523,7 @@
                   </div>
                   <div class="form-group">
                       <label for="filePdf1">Pdf Anhang</label>
-                      <input type="file" name="fileAppendices[]" id="filePdf1" value="PDF Anhang" onChange="templateAppendixSelected(1);" />
+                      <input type="file" name="fileAppendices[]" id="filePdf1" Anhang" onChange="templateAppendixSelected(1);" />
                   </div>
                   <div class="form-group">
                       <input type="submit" name="sbmUploadJobApplicationTemplate" value="Vorlage hochladen" />
@@ -434,7 +534,7 @@
 
 
           <div class="distanced-div">
-              <h1><a name="setYourValues">Deine Werte &auml;ndern</a></h1>
+              <h1 id="setYourValues" class="undecorated-anchor">Deine Werte &auml;ndern</h1>
               <form action="" method="post">
                   <div class="form-group">
                       <label for="">Geschlecht</label>
@@ -488,13 +588,12 @@
 
 
             <div class="distanced-div">
-                <h1><a name="addEmployer">Arbeitgeber hinzuf&uuml;gen</a></h1>
+                <h1 id="addEmployer" class="undecorated-anchor">Arbeitgeber hinzuf&uuml;gen</h1>
                 <form action="" method="post">
                     <input type="text" name="txtReadEmployerValuesFromWebSite" />
                     <input type="submit" name="sbmReadEmployerValuesFromWebSite" value="Werte von Website einlesen" />
                 </form>
                 <form action="" method="post">
-                    <table>
                     <?php
                         $currentEmployer = ['$chefAnredeBriefkopf' => ''
                                            , '$geehrter' => ''
@@ -513,27 +612,33 @@
                         }
                     ?>
                             <label for="txtCompany">Firma</label>
-                            <input class="form-control" type="text" id="txtCompany" name="txtCompany" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaName']; ?>" />
-                            <label for="txtStreet">Stra&szlig;e</label>
-                            <input class="form-control" type="text" id="txtStreet" name="txtStreet" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaStrasse']; ?>"/>
-                            <label for="txtPostCode">Postleitzahl</label>
-                            <input class="form-control" type="text" id="txtPostCode" name="txtPostCode" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaPlz']; ?>"/>
-                            <label for="txtCity">Stadt</label>
-                            <input class="form-control" type="text" id="txtCity" name="txtCity" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaStadt']; ?>"/>
-                            <label for="txtGender">Chef-Anrede</label>
-                            <input class="form-control" type="text" id="txtGender" name="txtGender" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefAnrede']; ?>"/>
-                            <label for="txtDegree">Chef-Titel</label>
-                            <input class="form-control" type="text" id="txtDegree" name="txtDegree" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefTitel']; ?>"/>
+                            <input class="form-control" type="text" name="txtCompany" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaName']; ?>" />
+                            <label for="txtCompanyStreet">Stra&szlig;e</label>
+                            <input class="form-control" type="text" name="txtCompanyStreet" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaStrasse']; ?>"/>
+                            <label for="txtCompanyPostCode">Postleitzahl</label>
+                            <input class="form-control" type="text" name="txtCompanyPostCode" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaPlz']; ?>"/>
+                            <label for="txtCompanyCity">Stadt</label>
+                            <input class="form-control" type="text" name="txtCompanyCity" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaStadt']; ?>"/>
+                            <div class="form-group">
+                                <label>Chef-Geschlecht</label>
+                                <div class="form-control">
+                                    <input type="hidden" name="rbBossGender" value="x" />
+                                    <label class="radio-inline"><input type="radio" name="rbBossGender" value="m" <?php if(isset($_POST['rbBossGender']) && $_POST['rbBossGender'] === 'm') echo 'checked="checked"'; ?>/>M&auml;nnlich</label>
+                                    <label class="radio-inline"><input type="radio" name="rbBossGender" value="f" <?php if(isset($_POST['rbBossGender']) && $_POST['rbBossGender'] === 'f') echo 'checked="checked"'; ?>/>Weiblich</label>
+                                </div>
+                            </div>
+                            <label for="txtBossDegree">Chef-Titel</label>
+                            <input class="form-control" type="text" name="txtBossDegree" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefTitel']; ?>"/>
                             <label for="txtFirstName">Chef-Vorname</label>
-                            <input class="form-control" type="text" id="txtFirstName" name="txtFirstName" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefVorname']; ?>"/>
+                            <input class="form-control" type="text" name="txtBossFirstName" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefVorname']; ?>"/>
                             <label for="txtLastName">Chef-Nachname</label>
-                            <input class="form-control" type="text" id="txtLastName" name="txtLastName" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefNachname']; ?>"/>
+                            <input class="form-control" type="text" name="txtBossLastName" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$chefNachname']; ?>"/>
                             <label for="txtEmail">Email</label>
-                            <input class="form-control" type="text" id="txtEmail" name="txtEmail" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaEmail']; ?>"/>
+                            <input class="form-control" type="text" name="txtBossEmail" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaEmail']; ?>"/>
                             <label for="txtMobilePhone">Telefon mobil</label>
-                            <input class="form-control" type="text" id="txtMobilePhone" name="txtMobilePhone" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaMobil']; ?>"/>
+                            <input class="form-control" type="text" name="txtBossMobilePhone" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaMobil']; ?>"/>
                             <label for="txtPhone">Telefon fest</label>
-                            <input class="form-control" type="text" id="txtPhone" name="txtPhone" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaTelefon']; ?>"/>
+                            <input class="form-control" type="text" name="txtBossPhone" value="<?php if(isset($_POST['sbmReadEmployerValuesFromWebSite'])) echo $currentEmployer['$firmaTelefon']; ?>"/>
                             <input type="submit" name="sbmAddEmployer" value="Arbeitgeber hinzuf&uuml;gen" />
                 </form>
             </div>
@@ -546,7 +651,7 @@
 
 
                 <div id="divApplyNow" class="distanced-div">
-                    <h1><a name="applyNow">Jetzt bewerben</a></h1>
+                    <h1 id="applyNow" class="undecorated-anchor">Jetzt bewerben</h1>
                     <table id="selectEmployerTable" class="table table-hover table-border table-sm">
                     <?php
                         $employers = [];
@@ -635,7 +740,7 @@
 
 
                 <div id="divSentApplications" class="distanced-div">
-                    <h1><a name="sentApplications">Abgeschickte Bewerbungen</a></h1>
+                    <h1 id="sentApplications" class="undecorated-anchor">Abgeschickte Bewerbungen</h1>
                     <table class="table table-hover table-border">
                     <?php
                         $sentApplications = [];
@@ -701,10 +806,9 @@
 
 
 
-        </div><!-- /.col-xs-12 main -->
-    </div><!--/.row-->
-  </div><!--/.container-->
-</div><!--/.page-container-->
+    </div>
+  </div>
+</div>
 
 
 
@@ -714,66 +818,5 @@
 
 
 </body>
-<script>
-    selectedEmployerRowIndex = 0;
-    lastEmployerBackgroundColor = "white";
-    selectedTemplateRowIndex = 0;
-    lastTemplateBackgroundColor = "white";
-    function selectTemplateRowIndex(row)
-    {
-        document.getElementById("selectTemplateTable").getElementsByTagName("tr")[selectedTemplateRowIndex].style.backgroundColor = lastTemplateBackgroundColor;
-        selectedTemplateRowIndex = row.rowIndex;
-        document.getElementById('hidTemplateIndex').value = row.rowIndex;
-        lastTemplateBackgroundColor = row.style.backgroundColor;
-        row.style.backgroundColor = 'lightgreen';
-    }
-    function selectEmployerRowIndex(row)
-    {
-        document.getElementById("selectEmployerTable").getElementsByTagName("tr")[selectedEmployerRowIndex].style.backgroundColor = lastEmployerBackgroundColor;
-        selectedEmployerRowIndex = row.rowIndex;
-        document.getElementById('hidEmployerIndex').value = row.rowIndex;
-        lastEmployerBackgroundColor = row.style.backgroundColor;
-        row.style.backgroundColor = 'lightgreen';
-    }
-
-
-    function templateAppendixSelected(fileNr)
-    {
-        lastTableRow = $("#tblUploadJobApplicationTemplate tr").eq(-1);
-        fileAppendices = $("#tblUploadJobApplicationTemplate [name = 'fileAppendices[]'");
-        if(fileAppendices.length == fileNr)
-        {
-            td1 = $("<td />").text("PDF Anhang");
-            fileInput = $("<input></input>")
-                    .attr("type", "file")
-                    .attr("name", "fileAppendices[]")
-                    .attr("value", "PDF Anhang")
-                    .attr("onChange", "templateAppendixSelected(" + (fileNr + 1) + ");");
-            td2 = $("<td />").append(fileInput);
-            tr = $("<tr />");
-            tr.append(td1);
-            tr.append(td2);
-            tr.insertBefore(lastTableRow);
-        }
-
-
-    }
-
-    function validateInput(el)
-    {
-        alert("hallo!");
-        if(el.value != "hallo")
-        {
-            el.parentNode.classList.add("has-error");
-            el.setCustomValidity("Everything fine");
-        }
-        else
-        {
-            el.parentNode.classList.remove("has-error");
-            el.setCustomValidity("");
-        }
-    }
-
-</script>
 
 </html>

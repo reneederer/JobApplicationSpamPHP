@@ -3,6 +3,7 @@
         "phpunit/phpunit": "^6.4",
         "codeception/codeception": "*",
         "twbs/bootstrap": "^3.3",
-        "components/font-awesome": "^4.7"
+        "components/font-awesome": "^4.7",
+        "phpmailer/phpmailer": "^6.0"
     }
 }

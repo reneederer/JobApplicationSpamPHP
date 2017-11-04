@@ -3,6 +3,10 @@
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 
+    require_once('../vendor/phpmailer/phpmailer/src/Exception.php');
+    require_once('../vendor/phpmailer/phpmailer/src/PHPMailer.php');
+    require_once('../vendor/phpmailer/phpmailer/src/SMTP.php');
+
     require_once('config.php');
     require_once('odtFunctions.php');
     require_once('websiteFunctions.php');
@@ -10,6 +14,9 @@
     require_once('helperFunctions.php');
 
     session_start();
+
+    phpinfo();
+    die("");
 
 
     $dbConn = new PDO('mysql:host=localhost;dbname=' . $config["database"]["database"], $config['database']['username'], $config['database']['password']);

@@ -5,6 +5,12 @@
     margin-top: 80px;
 }
 
+.undecorated-anchor
+{
+    text-decoration: none !important;
+    pointer-events: none !important;
+}
+
 
 body,html,.row-offcanvas {
     height:100%;
@@ -16,8 +22,8 @@ body {
 
 #sidebar {
     width: inherit;
-    min-width: 220px;
-    max-width: 220px;
+    min-width: 320px;
+    max-width: 320px;
     background-color:#f5f5f5;
     float: left;
     height:100%;
