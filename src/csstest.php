@@ -8,6 +8,7 @@
     require_once('../vendor/phpmailer/phpmailer/src/SMTP.php');
 
     require_once('config.php');
+    require_once('useCase.php');
     require_once('odtFunctions.php');
     require_once('websiteFunctions.php');
     require_once('dbFunctions.php');
@@ -26,11 +27,17 @@
     $dbConn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $dbConn->exec("SET NAMES utf8");
 
+    function getDBConn()
+    {
+        global $dbConn;
+        return $dbConn;
+    }
+
 
     if(isset($_POST['sbmLoginForm']))
     {
-        $userIdAndPassword = getIdAndPassword($dbConn, $_POST['txtName']);
-        if(password_verify($_POST['txtPassword'], $userIdAndPassword['password']))
+        $userIdAndPassword = getIdAndPasswordByUserName($dbConn, $_POST['txtName']);
+        if(!empty($userIdAndPassword) && password_verify($_POST['txtPassword'], $userIdAndPassword['password']))
         {
             $_SESSION['user'] = identifyUser($dbConn, $_POST['txtName']);
             if(count($_SESSION['user']) > 0)
@@ -88,15 +95,7 @@
                          $_POST['txtBossEmail'],
                          $_POST['txtBossMobilePhone'],
                          $_POST['txtBossPhone']);
-        $validateResult = validateEmployer($employer);
-        if($validateResult->isValid)
-        {
-            addEmployer($dbConn, $_SESSION['user']['id'], $employer);
-        }
-        else
-        {
-            $currentMessage .= join("<br>", $validateResult->errors);
-        }
+        ucAddEmployer($employer);
     }
     else if(isset($_POST['sbmDownloadPDF']))
     {
@@ -109,40 +108,47 @@
     }
     else if(isset($_POST['sbmUploadJobApplicationTemplate']))
     {
-        $templateDataResult = validateTemplateData(
-            new TemplateData($_POST['txtJobApplicationTemplateName'],
-                             $_POST['txtEmailSubject'], $_POST['txtEmailBody'],
-                             $_FILES['fileODT']['name'],
-                             $_FILES['fileAppendices']['name']));
-        if($templateDataResult->isValid){
-            $baseDir = "/var/www/user/" . $_SESSION['user']['userName'] . '/';
-            if (!file_exists($baseDir)) {
-                mkdir($baseDir, 0777, true);
-            }
-            $odtFileName = getNonExistingFileName($baseDir);
-            move_uploaded_file($_FILES['fileODT']['tmp_name'], $odtFileName);
-            addJobApplicationTemplate( $dbConn
-                                     , $_SESSION['user']['id']
-                                     , $_POST['txtJobApplicationTemplateName']
-                                     , $_POST['txtUserAppliesAs']
-                                     , $_POST['txtEmailSubject']
-                                     , $_POST['txtEmailBody']
-                                     , $odtFileName);
-            $templateId = getTemplateIdByName($dbConn, $_SESSION['user']['id'], $_POST['txtJobApplicationTemplateName']);
-            for($i = 0; $i < count($_FILES['fileAppendices']['tmp_name']); ++$i)
-            {
-                if($_FILES['fileAppendices']['tmp_name'][$i] !== '')
+        try
+        {
+            $templateDataResult = validateTemplateData(
+                new TemplateData($_POST['txtJobApplicationTemplateName'],
+                                 $_POST['txtEmailSubject'], $_POST['txtEmailBody'],
+                                 $_FILES['fileODT'],
+                                 $_FILES['fileAppendices']));
+            if($templateDataResult->isValid){
+                $baseDir = "/var/www/user/" . $_SESSION['user']['userName'] . '/';
+                if (!file_exists($baseDir)) {
+                    mkdir($baseDir, 0777, true);
+                }
+                $odtFileName = getNonExistingFileName($baseDir, 'odt');
+                move_uploaded_file($_FILES['fileODT']['tmp_name'], $odtFileName);
+                addJobApplicationTemplate( $dbConn
+                                         , $_SESSION['user']['id']
+                                         , $_POST['txtJobApplicationTemplateName']
+                                         , $_POST['txtUserAppliesAs']
+                                         , $_POST['txtEmailSubject']
+                                         , $_POST['txtEmailBody']
+                                         , $odtFileName);
+                $templateId = getTemplateIdByName($dbConn, $_SESSION['user']['id'], $_POST['txtJobApplicationTemplateName']);
+                for($i = 0; $i < count($_FILES['fileAppendices']['tmp_name']); ++$i)
                 {
-                    $pdfAppendixFileName = getNonExistingFileName($baseDir);
-                    move_uploaded_file($_FILES['fileAppendices']['tmp_name'][$i], $pdfAppendixFileName);
-                    addPdfAppendix( $dbConn
-                                  , $_POST['txtJobApplicationTemplateName']
-                                  , $templateId
-                                  , $pdfAppendixFileName);
+                    if($_FILES['fileAppendices']['tmp_name'][$i] !== '')
+                    {
+                        $pdfAppendixFileName = getNonExistingFileName($baseDir, "pdf");
+                        move_uploaded_file($_FILES['fileAppendices']['tmp_name'][$i], $pdfAppendixFileName);
+                        addPdfAppendix( $dbConn
+                                      , $_POST['txtJobApplicationTemplateName']
+                                      , $templateId
+                                      , $pdfAppendixFileName);
+                    }
                 }
             }
+            $currentMessage .= join("<br>", $templateDataResult->errors);
         }
-        $currentMessage .= join("<br>", $templateDataResult->errors);
+        catch(\Exception $e)
+        {
+            $currentMessage .= $e->errorMessage;
+        }
     }
     else if(isset($_POST['sbmApplyNowForReal']) || isset($_POST['sbmApplyNowForTest']))
     {
@@ -183,22 +189,22 @@
         $pdfFileName = $pdfDirectoryAndFile[0] . str_replace(" ", "_", mb_strtolower($_SESSION['user']['lastName'] . '_bewerbung_als_' . $jobApplicationTemplate['userAppliesAs'])) . '.pdf';
         exec($pdfUniteCommand . ' ' . $pdfFileName . ' 2>1', $output);
 
-        $errorResult = sendMail( $_SESSION['user']['email']
+        $taskResult = sendMail( $_SESSION['user']['email']
             , $_SESSION['user']['firstName'] . ' ' . $_SESSION['user']['lastName']
             , replaceAllInString($jobApplicationTemplate['emailSubject'], $dict)
             , replaceAllInString($jobApplicationTemplate['emailBody'], $dict)
             , isset($_POST['sbmApplyNowForReal']) ? $employerValuesDict['$firmaEmail'] : $_SESSION['user']['email']
             , [$pdfFileName]);
-        if($errorResult->isValid)
+        if($taskResult->isValid)
         {
             die("valid");
             $currentMessage .= "Email wurde versandt.";
         }
         else
         {
-            var_dump($errorResult);
+            var_dump($taskResult);
             die("");
-            $currentMessage .= join("<br>", $errorResult->errors);
+            $currentMessage .= join("<br>", $taskResult->errors);
         }
     }
     else if(isset($_POST['sbmDownloadSentApplications']))
@@ -264,14 +270,14 @@
         catch(phpmailerException $e)
         {
             die($e->errorMessage());
-            return new ErrorResult(false, ["Email konnte nicht versandt werden"], []);
+            return new TaskResult(false, ["Email konnte nicht versandt werden"], []);
         }
         catch(\Exception $e)
         {
             die($e->errorMessage());
-            return new ErrorResult(false, ["Email konnte nicht versandt werden"], []);
+            return new TaskResult(false, ["Email konnte nicht versandt werden"], []);
         }
-        return new ErrorResult(true, [], []);
+        return new TaskResult(true, [], []);
     }
 
 
@@ -519,11 +525,11 @@
                       <textarea name="txtEmailBody" class="form-control" id="txtEmailBody" cols="100" rows="15"><?php if(isset($_POST['txtEmailBody'])) echo $_POST['txtEmailBody']; ?></textarea>
                   <div class="form-group">
                       <label for="fileODT">Vorlage (*.odt oder *.docx)</label>
-                      <input type="file" name="fileODT" id="fileODT" />
+                      <input type="file" name="fileODT" id="fileODT" accept=".odt,.docx" />
                   </div>
                   <div class="form-group">
                       <label for="filePdf1">Pdf Anhang</label>
-                      <input type="file" name="fileAppendices[]" id="filePdf1" Anhang" onChange="templateAppendixSelected(1);" />
+                      <input type="file" name="fileAppendices[]" id="filePdf1" Anhang" accept=".pdf" onChange="templateAppendixSelected(1);" />
                   </div>
                   <div class="form-group">
                       <input type="submit" name="sbmUploadJobApplicationTemplate" value="Vorlage hochladen" />

@@ -4,7 +4,15 @@
         $statement = $dbConn->prepare('select templateName, userAppliesAs from jobApplicationTemplate where userId=:userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         return $rows;
     }
@@ -15,7 +23,16 @@
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         if(count($rows) === 0)
         {
@@ -33,7 +50,15 @@
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         return $rows[0];
     }
@@ -50,6 +75,10 @@
         $statement->bindParam(':emailBody', $emailBody);
         $statement->bindParam(':odtFile', $odtFile);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add job application template.');
+        }
     }
 
     function getTemplateIdByName($dbConn, $userId, $templateName)
@@ -58,7 +87,15 @@
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateName', $templateName);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         return $rows[0]['id'];
     }
@@ -70,8 +107,20 @@
         --$index;
         $statement->bindParam(':index', $index);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
+        if(count($rows) < 1)
+        {
+            throw new \Exception('Failed to find row ' . $index);
+        }
         return $rows[0]['id'];
     }
 
@@ -80,7 +129,15 @@
         $statement = $dbConn->prepare('select pdfFile from jobApplicationPdfAppendix where jobApplicationTemplateId=:templateId');
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         return $rows;
     }
@@ -91,7 +148,11 @@
         $statement->bindParam(':name', $name);
         $statement->bindParam(':templateId', $templateId);
         $statement->bindParam(':pdfFileName', $pdfFileName);
-        $statement->execute();
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to insert PDF appendix.');
+        }
     }
 
     function addUser($dbConn, $name, $password)
@@ -99,24 +160,27 @@
         $statement = $dbConn->prepare('insert into user(name, password) values(:name, :password)');
         $statement->bindParam(':name', $name);
         $statement->bindParam(':password', $password);
-        $statement->execute();
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add user.');
+        }
     }
 
-    function addToDownloads($dbConn, $folder, $userId)
+    function getIdAndPasswordByUserName($dbConn, $userName)
     {
-        $statement = $dbConn->prepare('insert into userDownloads(folder, userId, downloadTime) values(:folder, :userId, now())');
-
-        $statement->bindParam(':folder', $folder);
-        $statement->bindParam(':userId', $userId);
-        $statement->execute();
-    }
-
-    function getIdAndPassword($dbConn, $userName)
-    {
-        $statement = $dbConn->prepare('select id, password from user where name=:userName');
+        $statement = $dbConn->prepare('select id, password from user where name=:userName limit 1');
         $statement->bindParam(':userName', $userName);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get id and password.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         if(count($rows) === 0)
         {
@@ -133,7 +197,16 @@
         $statement = $dbConn->prepare('select id from user where name=:userName');
         $statement->bindParam(':userName', $userName);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to identify user.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
+
         $rows = $statement->fetchAll();
         if(count($rows) === 0)
         {
@@ -150,7 +223,16 @@
         $statement = $dbConn->prepare('select firstName, lastName, gender, degree, street, postCode, city, email, mobilePhone, phone, birthday, birthplace, maritalStatus from userAddress where userId=:userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get user values.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
+
         $rows = $statement->fetchAll();
         if(count($rows) !== 1)
         {
@@ -186,7 +268,11 @@
         $statement->bindParam(':email', $user->email);
         $statement->bindParam(':mobilePhone', $user->mobilePhone);
         $statement->bindParam(':phone', $user->phone);
-        $statement->execute();
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to update user values.');
+        }
     }
 
     function getJobApplications($dbConn, $userId, $fromDate, $toDate)
@@ -235,7 +321,15 @@
 
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job applications.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         return $rows;
     }
@@ -260,7 +354,11 @@
         $statement = $dbConn->prepare('insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage)
             values(:jobApplicationId, curdate(), null, 1, "")');
         $statement->bindParam(':jobApplicationId', $jobApplicationId);
-        $statement->execute();
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add job application.');
+        }
     }
 
     function getEmployers($dbConn, $userId)
@@ -269,16 +367,17 @@
             from employer where userId = :userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get get employers.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
-        if(count($rows) === 0)
-        {
-            return Array();
-        }
-        else
-        {
-            return $rows;
-        }
+        return $rows;
     }
 
     function getEmployer($dbConn, $userId, $employerId)
@@ -288,7 +387,15 @@
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':employerId', $employerId);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get employer with id ' . $employerId);
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
         return $rows[0];
     }
@@ -300,8 +407,20 @@
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':index', $index);
         $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job application templates.');
+        }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
         $rows = $statement->fetchAll();
+        if(count($rows) < 1)
+        {
+            throw new \Exception("Employer with rowIndex $employerRowIndex not found.");
+        }
         return $rows[0]['id'];
     }
 
@@ -323,6 +442,10 @@
         $statement->bindParam(':email', $employer->email);
         $statement->bindParam(':mobilePhone', $employer->mobilePhone);
         $statement->bindParam(':phone', $employer->phone);
-        $statement->execute();
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add employer.');
+        }
     }
 ?>

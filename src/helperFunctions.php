@@ -1,10 +1,10 @@
 <?php
-    function getNonExistingFileName($baseDir)
+    function getNonExistingFileName($baseDir, $ext)
     {
         $fileName = "";
         do
         {
-            $fileName = $baseDir . uniqid() . '.odt';
+            $fileName = $baseDir . uniqid() . '.' . $ext;
         } while(file_exists($fileName));
         return $fileName;
     }
