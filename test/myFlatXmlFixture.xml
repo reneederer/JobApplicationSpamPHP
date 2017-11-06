@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<dataset>
+    <user id="1" email="rene.ederer.nbg@gmail.com" password="$2y$10$8dVDSZuAynH1FMy5VzWWZ.mNt5vPQC/osT45ojdSAMpLFnneH7uW6" />
+    <user id="2" email="helmut@goerke.de" password="$2y$10$1DiqOjXBs57duInzCh9eKu4U08luVTqbj7ayTflcV6xLBmnKZyBgu" />
+    <userDetails userId="1" gender="m" degree="" firstName="René" lastName="Ederer" street="Raabstr. 24A" postcode="90429" city="Nürnberg" mobilePhone="01520 2723494" phone="" birthday="1982-07-19" birthplace="Nürnberg" maritalStatus="ledig" />
+    <userDetails userId="2" gender="m" degree="" firstName="Helmut" lastName="Goerke" street="Raabstr. 24A" postcode="90429" city="Nürnberg" mobilePhone="" phone="" birthday="1963-01-01" birthplace="Nürnberg" maritalStatus="ledig" />
+    <jobApplicationTemplate userId="1" templateName="Mein Template" userAppliesAs="Fachinformatiker für Anwendungsentwicklung" emailSubject="Bewerbung als Fachinformatiker für Anwendungsentwicklung" emailBody="Sehr $geehrter $chefAnrede $chefNachname\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würde ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr" odtFile="/var/www/userFiles/bewerbung_neu.odt" />
+    <jobApplicationTemplate userId="1" templateName="Mein Template ohne Anhang" userAppliesAs="Fachinformatiker für Anwendungsentwicklung" emailSubject="Bewerbung als Fachinformatiker für Anwendungsentwicklung" emailBody="Sehr $geehrter $chefAnrede $chefNachname\n\nanbei schicke ich Ihnen meine Bewerbungsunterlagen.\nDas Jobcenter kann während der Einarbeitungszeit (auch mehrere Monate) bis zu 50% der Gehaltskosten übernehmen.\nMeine Sachbearbeiterin Frau Götz (jobcenter-nuernberg-stadt.mitte-ag-team@jobcenter-ge.de) gibt Ihnen gerne nähere Auskunft.\nÜber eine Einladung zu einem Bewerbungsgespräch würde ich mich sehr freuen.\n\nMit freundlichen Grüßen\n\n\n$meinVorname $meinNachname\n$meineStrasse\n$meinePlz $meineStadt\n$meineMobilnr" odtFile="/var/www/userFiles/bewerbung_neu.odt" />
+    <jobApplicationPdfAppendix  name="ihkZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/ihk_zeugnis_small.pdf" />
+    <jobApplicationPdfAppendix  name="segitzZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/segitz_zeugnis_small.pdf" />
+    <jobApplicationPdfAppendix  name="kmkZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/kmk_zeugnis_small.pdf" />
+    <jobApplicationPdfAppendix  name="labenwoldZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/labenwolf_zeugnis_small.pdf" />
+    <employer userId="1" companyName="BJC BEST JOB IT SERVICES GmbH" gender="m" degree="" firstName="Katrin" lastName="Thoms" street="Alte Rabenstraße 32" postcode="20148" city="Hamburg" email="Katrin.Thoms@bjc-its.de" phone="+49 (40) 5 14 00 7180" mobilePhone="" />
+    <employer userId="1" companyName="Deutsche Anwaltshotline AG" gender="m" degree="" firstName="Jonas" lastName="Zimmermann" street="Am Plärrer 7" postcode="90443" city="Nürnberg" email="mail@deutsche-anwaltshotline.de" phone="+49 911 3765690" mobilePhone="" />
+    <employer userId="1" companyName="ANG.-Punkt und gut! GmbH" gender="f" degree="" firstName="Jaqueline" lastName="Strauß" street="Südwestpark 37-41" postcode="90449" city="Nürnberg" email="bewerbung@ang.de" phone="+49 911 525700" mobilePhone="+49 1778876348" />
+    <jobApplicationStatusValue id="1" status="Waiting for reply after sending job application" />
+    <jobApplicationStatusValue id="2" status="Appointment for job interview" />
+    <jobApplicationStatusValue id="3" status="Job application rejected without an interview" />
+    <jobApplicationStatusValue id="4" status="Waiting for reply after job interview" />
+    <jobApplicationStatusValue id="5" status="Job application rejected after interview" />
+    <jobApplicationStatusValue id="6" status="Job application accepted after interview" />
+    <jobApplication userId="1" employerId="1" jobApplicationTemplateId="1" />
+    <jobApplication userId="1" employerId="2" jobApplicationTemplateId="1" />
+    <jobApplication userId="1" employerId="3" jobApplicationTemplateId="1" />
+    <jobApplicationStatus jobApplicationId="1" statusChangedOn="2017-10-26" dueOn="2017-10-26" statusValueId="1" statusMessage="" />
+    <jobApplicationStatus jobApplicationId="2" statusChangedOn="2017-10-26" dueOn="2017-10-26" statusValueId="1" statusMessage="" />
+    <jobApplicationStatus jobApplicationId="3" statusChangedOn="2017-10-26" dueOn="2017-10-26" statusValueId="1" statusMessage="" />
+</dataset>

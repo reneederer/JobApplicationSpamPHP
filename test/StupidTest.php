@@ -11,25 +11,39 @@ class StupidTest extends TestCase
 {
     use TestCaseTrait;
 
-    // only instantiate pdo once for test clean-up/fixture load
     static private $pdo = null;
-
-    // only instantiate PHPUnit_Extensions_Database_DB_IDatabaseConnection once per test
     private $conn = null;
 
     final public function getConnection()
     {
         if ($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = new PDO('sqlite::memory:');
+                self::$pdo = new PDO('mysql:host=localhost;dbname=jobApplication', 'root', '1234');
             }
-            $this->conn = $this->createDefaultDBConnection(self::$pdo, ':memory:');
+            $this->conn = $this->createDefaultDBConnection(self::$pdo, 'InnoDB');
         }
 
         return $this->conn;
     }
+
+
+
+    public function testAddEntry()
+    {
+        $queryTable = $this->getConnection()->createQueryTable('user', 'SELECT * FROM user');
+        $expectedTable = $this->createFlatXmlDataSet("/var/www/html/jobApplicationSpam/test/expectedBook.xml")->getTable("user");
+        $this->assertTablesEqual($expectedTable, $queryTable);
+    }
+
+    public function testAddEntry1()
+    {
+        $queryTable = $this->getConnection()->createQueryTable('user', 'SELECT * FROM user');
+        $expectedTable = $this->createFlatXmlDataSet("/var/www/html/jobApplicationSpam/test/expectedBook.xml")->getTable("user");
+        $this->assertTablesEqual($expectedTable, $queryTable);
+    }
+
     public function getDataSet()
     {
-        return $this->createFlatXmlDataSet('myFlatXmlFixture.xml');
+        return $this->createFlatXmlDataSet('/var/www/html/jobApplicationSpam/test/myFlatXmlFixture.xml');
     }
 }

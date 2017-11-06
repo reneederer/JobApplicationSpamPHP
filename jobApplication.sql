@@ -1,14 +1,10 @@
-drop table if exists jobApplicationStatus;
-drop table if exists jobApplicationStatusValue;
-drop table if exists jobApplication;
-drop table if exists employer;
-drop table if exists jobApplicationPdfAppendix;
-drop table if exists jobApplicationTemplate;
-drop table if exists userDetails;
-drop table if exists userDownloads;
-drop table if exists jobCenterContract;
-drop table if exists user;
-
+drop database if exists $database;
+set storage_engine=$engine;
+set names utf8;
+create database if not exists $database;
+set storage_engine=$engine;
+use $database;
+set storage_engine=$engine;
 create table user(id int primary key auto_increment, email varchar(200) not null, password varchar(256) not null);
 create table userDetails(userId int primary key, gender varchar(1) not null, degree varchar(10) not null, firstName varchar(50) not null, lastName varchar(50) not null, street varchar(50) not null, postcode varchar(20) not null, city varchar(50) not null, mobilePhone varchar(30) not null, phone varchar(30) not null, birthday varchar(10) not null, birthplace varchar(50) not null, maritalStatus varchar(20) not null, foreign key(userId) references user(id));
 create table jobApplicationTemplate(id int primary key auto_increment, userId int not null, templateName varchar(100) not null, userAppliesAs varchar(200) not null, emailSubject varchar(100) not null, emailBody varchar(1000) not null, odtFile varchar(200), foreign key(userId) references user(id));;
@@ -18,7 +14,6 @@ create table jobApplication(id int primary key auto_increment, userId int not nu
 create table jobApplicationStatusValue(id int primary key, status varchar(50));
 create table jobApplicationStatus(id int primary key auto_increment, jobApplicationId int, statusChangedOn date, dueOn datetime, statusValueId int, statusMessage varchar(200), foreign key(jobApplicationId) references jobApplication(id), foreign key(statusValueId) references jobApplicationStatusValue(id));
 create table jobCenterContract(id int primary key auto_increment, userId int not null, repeatEvery int not null, jobApplicationCount int not null, expireDate date not null, foreign key(userId) references user(id));
-
 insert into user(id, email, password) values(1, "rene.ederer.nbg@gmail.com", "$renePassword");
 insert into user(id, email, password) values(2, "helmut@goerke.de", "$helmutPassword");
 insert into userDetails(userId, gender, degree, firstName, lastName, street, postcode, city, mobilePhone, phone, birthday, birthplace, maritalStatus) values(1, "m", "", "René", "Ederer", "Raabstr. 24A", "90429", "Nürnberg", "01520 2723494", "", "19.07.1982", "Nürnberg", "ledig");
@@ -29,12 +24,12 @@ insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) 
 insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('segitzZeugnis', 1, '/var/www/userFiles/segitz_zeugnis_small.pdf');
 insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('kmkZeugnis', 1, '/var/www/userFiles/kmk_zeugnis_small.pdf');
 insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values ('labenwolfZeugnis', 1, '/var/www/userFiles/labenwolf_zeugnis_small.pdf');
-insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "BJC BEST JOB IT SERVICES GmbH", "Frau", "", "Katrin", "Thoms", "Alte Rabenstraße 32", "20148", "Hamburg", "Katrin.Thoms@bjc-its.de", "+49 (40) 5 14 00 7180", "");
-insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "Deutsche Anwaltshotline AG", "Herr", "", "Jonas", "Zimmermann", "Am Plärrer 7", "90443", "Nürnberg", "mail@deutsche-anwaltshotline.de", "+49 911 3765690", "");
-insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "ANG.-Punkt und gut! GmbH", "Frau", "", "Jaqueline", "Strauß", "Südwestpark 37-41", "90449", "Nürnberg", "bewerbung@ang.de", "+49 911 525700", "+49 1778876348");
-insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "iQ-Bewerbermanagement", "Frau", "", "Nele", "Sommerfeld", "Obernstr. 111", "28832", "Achim bei Bremen", "nele.sommerfeld@iq-bewerbermanagement.de", "+49 40 6003852232", "");
-insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "engineering people GmbH", "Herr", "", "Haluk", "Acar", "Südwestpark 60", "90449", "Nürnberg", "haluk.acar@engineering-people.de", "+49 911 239560316", "");
-insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "BFI Informationssysteme GmbH", "Herr", "", "Michael", "Schlund", "Ötterichweg 7", "90411", "Nürnberg", "Michael.Schlund@bfi-info.de", "0911 9457668", "");
+insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "BJC BEST JOB IT SERVICES GmbH", "f", "", "Katrin", "Thoms", "Alte Rabenstraße 32", "20148", "Hamburg", "Katrin.Thoms@bjc-its.de", "+49 (40) 5 14 00 7180", "");
+insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "Deutsche Anwaltshotline AG", "m", "", "Jonas", "Zimmermann", "Am Plärrer 7", "90443", "Nürnberg", "mail@deutsche-anwaltshotline.de", "+49 911 3765690", "");
+insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "ANG.-Punkt und gut! GmbH", "f", "", "Jaqueline", "Strauß", "Südwestpark 37-41", "90449", "Nürnberg", "bewerbung@ang.de", "+49 911 525700", "+49 1778876348");
+insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "iQ-Bewerbermanagement", "f", "", "Nele", "Sommerfeld", "Obernstr. 111", "28832", "Achim bei Bremen", "nele.sommerfeld@iq-bewerbermanagement.de", "+49 40 6003852232", "");
+insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "engineering people GmbH", "m", "", "Haluk", "Acar", "Südwestpark 60", "90449", "Nürnberg", "haluk.acar@engineering-people.de", "+49 911 239560316", "");
+insert into employer(userId, companyName, gender, degree, firstName, lastName, street, postcode, city, email, phone, mobilePhone) values(1, "BFI Informationssysteme GmbH", "m", "", "Michael", "Schlund", "Ötterichweg 7", "90411", "Nürnberg", "Michael.Schlund@bfi-info.de", "0911 9457668", "");
 insert into jobApplicationStatusValue(id, status) values(1, "Waiting for reply after sending job application");
 insert into jobApplicationStatusValue(id, status) values(2, "Appointment for job interview");
 insert into jobApplicationStatusValue(id, status) values(3, "Job application rejected without an interview");
