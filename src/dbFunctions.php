@@ -1,7 +1,7 @@
 <?php
     function getJobApplicationTemplates($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select templateName, userAppliesAs from jobApplicationTemplate where userId=:userId');
+        $statement = $dbConn->prepare('select id, templateName, userAppliesAs from jobApplicationTemplate where userId=:userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
         if($result === false)
@@ -67,7 +67,7 @@
         }
         else
         {
-            throw new \Exception('Query failed to find job application template.');
+            throw new \Exception("Query failed to find job application template. userId: $userId, templateId: $templateId");
         }
     }
 
@@ -120,29 +120,6 @@
         return $rows[0]['id'];
     }
 
-    function getTemplateIdByIndex($dbConn, $userId, $index)
-    {
-        $statement = $dbConn->prepare("select id from jobApplicationTemplate where userId=:userId limit :index,1");
-        $statement->bindParam(':userId', $userId);
-        --$index;
-        $statement->bindParam(':index', $index);
-        $result = $statement->execute();
-        if($result === false)
-        {
-            throw new \Exception('Query failed to get job application templates.');
-        }
-        $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
-        if($result === false)
-        {
-            throw new \Exception('Failed to setFetchMode().');
-        }
-        $rows = $statement->fetchAll();
-        if(count($rows) < 1)
-        {
-            throw new \Exception('Failed to find row ' . $index);
-        }
-        return $rows[0]['id'];
-    }
 
     function getPdfAppendices($dbConn, $templateId)
     {
@@ -390,7 +367,7 @@
 
     function getEmployers($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select companyName, street, postcode, city, email, mobilePhone, phone, gender, degree, firstName, lastName
+        $statement = $dbConn->prepare('select id, companyName, street, postcode, city, email, mobilePhone, phone, gender, degree, firstName, lastName
             from employer where userId = :userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
@@ -427,29 +404,6 @@
         return $rows[0];
     }
 
-    function getEmployerIndex($dbConn, $userId, $employerRowIndex)
-    {
-        $index = $employerRowIndex - 1;
-        $statement = $dbConn->prepare("select id from employer where userId=:userId limit :index,1");
-        $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':index', $index);
-        $result = $statement->execute();
-        if($result === false)
-        {
-            throw new \Exception('Query failed to get job application templates.');
-        }
-        $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
-        if($result === false)
-        {
-            throw new \Exception('Failed to setFetchMode().');
-        }
-        $rows = $statement->fetchAll();
-        if(count($rows) < 1)
-        {
-            throw new \Exception("Employer with rowIndex $employerRowIndex not found.");
-        }
-        return $rows[0]['id'];
-    }
 
     function addEmployer($dbConn, $userId, $employer)
     {

@@ -3,10 +3,6 @@
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 
-    require_once('../vendor/phpmailer/phpmailer/src/Exception.php');
-    require_once('../vendor/phpmailer/phpmailer/src/PHPMailer.php');
-    require_once('../vendor/phpmailer/phpmailer/src/SMTP.php');
-
     require_once('config.php');
     require_once('useCase.php');
     require_once('odtFunctions.php');
@@ -14,8 +10,6 @@
     require_once('dbFunctions.php');
     require_once('helperFunctions.php');
     require_once('validate.php');
-
-    use PHPMailer\PHPMailer\PHPMailer;
 
     session_start();
 
@@ -84,68 +78,7 @@
     }
     else if(isset($_POST['sbmApplyNowForReal']) || isset($_POST['sbmApplyNowForTest']))
     {
-        $employerIndex = getEmployerIndex($dbConn, $_SESSION['userId'], $_POST['hidEmployerIndex']);
-        $employerValuesDict = getEmployer($dbConn, $_SESSION['userId'], $employerIndex);
-        $userDetails = getUserDetails($dbConn, $_SESSION['userId']);
-        $userEmail = getEmailByUserId($dbConn, $_SESSION['userId']);
-        if(is_null($userDetails))
-        {
-            $currentMessage = 'Userdetails konnten nicht gefunden werden.';
-        }
-        else
-        {
-            $userDetailsDict =
-                [ '$meinTitel' => $userDetails->degree
-                , '$meineAnrede' => $userDetails->gender
-                , '$meinVorname' => $userDetails->firstName
-                , '$meinNachname' => $userDetails->lastName
-                , '$meineStrasse' => $userDetails->street
-                , '$meinePlz' => $userDetails->postcode
-                , '$meineStadt' => $userDetails->city
-                , '$meineEmail' => $userEmail
-                , '$meineTelefonnr' => $userDetails->phone
-                , '$meineMobilnr' => $userDetails->mobilePhone
-                , '$meinGeburtsdatum' => $userDetails->birthday
-                , '$meinGeburtsort' => $userDetails->birthplace
-                , '$meinFamilienstand' => $userDetails->maritalStatus]; 
-            $dict = $employerValuesDict + $userDetailsDict +
-                [ "\$geehrter" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'geehrter' : 'geehrte'
-                , "\$chefAnredeBriefkopf" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herrn' : 'Frau'
-                , "\$datumHeute" => date('d.m.Y')];
-            $dict["\$chefAnrede"] = $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herr' : 'Frau';
-
-            $jobApplicationTemplateId = getTemplateIdByIndex($dbConn, $_SESSION['userId'], $_POST['hidTemplateIndex']);
-            $jobApplicationTemplate = getJobApplicationTemplate($dbConn, $_SESSION['userId'], $jobApplicationTemplateId);
-            $pdfDirectoryAndFile = getPDF($jobApplicationTemplate['odtFile'], $dict, '/var/www/userFiles/tmp/');
-            $templateId = getTemplateIdByIndex($dbConn, $_SESSION['userId'], $_POST['hidTemplateIndex']);
-            addJobApplication($dbConn, $_SESSION['userId'], $employerIndex, $templateId);
-
-
-            $pdfAppendices = getPdfAppendices($dbConn, $templateId);
-            $pdfUniteCommand = $config['pdfunite'] . ' ' . ($pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1]);
-            foreach($pdfAppendices as $currentPdfAppendix)
-            {
-                $pdfUniteCommand .= ' ' . $currentPdfAppendix['pdfFile'];
-            }
-            $pdfFileName = $pdfDirectoryAndFile[0] . str_replace(' ', '_', mb_strtolower($userDetails->lastName . '_bewerbung_als_' . $jobApplicationTemplate['userAppliesAs'])) . '.pdf';
-            exec($pdfUniteCommand . ' ' . $pdfFileName . ' 2>1', $output);
-
-            $taskResult = sendMail( $userEmail
-                , $userDetails->firstName . ' ' . $userDetails->lastName
-                , replaceAllInString($jobApplicationTemplate['emailSubject'], $dict)
-                , replaceAllInString($jobApplicationTemplate['emailBody'], $dict)
-                , $pdfFileName
-                , isset($_POST['sbmApplyNowForReal']) ? $employerValuesDict['$firmaEmail'] : $userEmail
-                , [$pdfFileName]);
-            if($taskResult->isValid)
-            {
-                $currentMessage .= 'Email wurde versandt.';
-            }
-            else
-            {
-                $currentMessage .= join('<br>', $taskResult->errors);
-            }
-        }
+        ucApplyNow($dbConn, $_SESSION['userId'], $_POST['hidEmployerIndex'], $_POST['hidTemplateIndex'], true);
     }
     else if(isset($_POST['sbmDownloadSentApplications']))
     {
@@ -173,45 +106,6 @@
     }
 
 
-    function sendMail($from, $fromName, $subject, $body, $pdfAttachment, $to, $attachments)
-    {
-        try
-        {
-            $email = new PHPMailer(true);
-            $email->CharSet = 'UTF-8';
-            $email->Host = 'tls://smtp.gmail.com';
-            $email->Port = 587;
-            $email->SMTPAuth = true;
-            $email->SMTPSecure = 'tls';
-            $email->IsSMTP();
-            $email->Username = 'rene.ederer.nbg@gmail.com';
-            $email->Password = 'Steinmetzstr9';
-            $email->SMTPOptions = array(
-                'ssl' => array(
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true));
-            $email->From = $from;
-            $email->FromName = $fromName;
-            $email->Subject = $subject;
-            $email->Body = $body;
-            $email->AddBCC($from);
-            $email->AddAddress($to);
-            $email->AddAttachment($pdfAttachment, $pdfAttachment);
-            $email->Send();
-        }
-        catch(phpmailerException $e)
-        {
-            die($e->errorMessage());
-            return new TaskResult(false, ['Email konnte nicht versandt werden'], []);
-        }
-        catch(\Exception $e)
-        {
-            die($e->errorMessage());
-            return new TaskResult(false, ['Email konnte nicht versandt werden'], []);
-        }
-        return new TaskResult(true, [], []);
-    }
 
 
 ?>
@@ -241,19 +135,19 @@
     lastEmployerBackgroundColor = "white";
     selectedTemplateRowIndex = 0;
     lastTemplateBackgroundColor = "white";
-    function selectTemplateRowIndex(row)
+    function selectTemplateRowIndex(row, templateId)
     {
         document.getElementById("selectTemplateTable").getElementsByTagName("tr")[selectedTemplateRowIndex].style.backgroundColor = lastTemplateBackgroundColor;
         selectedTemplateRowIndex = row.rowIndex;
-        document.getElementById('hidTemplateIndex').value = row.rowIndex;
+        document.getElementById('hidTemplateIndex').value = templateId;
         lastTemplateBackgroundColor = row.style.backgroundColor;
         row.style.backgroundColor = 'lightgreen';
     }
-    function selectEmployerRowIndex(row)
+    function selectEmployerRowIndex(row, employerId)
     {
         document.getElementById("selectEmployerTable").getElementsByTagName("tr")[selectedEmployerRowIndex].style.backgroundColor = lastEmployerBackgroundColor;
         selectedEmployerRowIndex = row.rowIndex;
-        document.getElementById('hidEmployerIndex').value = row.rowIndex;
+        document.getElementById('hidEmployerIndex').value = employerId;
         lastEmployerBackgroundColor = row.style.backgroundColor;
         row.style.backgroundColor = 'lightgreen';
     }
@@ -604,7 +498,7 @@
                     <table id="selectEmployerTable" class="table table-hover table-border table-sm">
                     <?php
                         $employers = [];
-                        if(isset($_SESSION['user']) && isset($_SESSION['userId']))
+                        if(isset($_SESSION['userId']))
                         {
                             $employers = getEmployers($dbConn, $_SESSION['userId']);
                         }
@@ -618,7 +512,7 @@
                             echo '</tr>';
                             foreach($employers as $employer)
                             {
-                                echo '<tr onClick="selectEmployerRowIndex(this)">';
+                                echo '<tr onClick="selectEmployerRowIndex(this, ' . htmlspecialchars($employer['id']) . ')">';
                                 foreach($employer as $key => $value)
                                 {
                                         echo '<td>';
@@ -633,7 +527,7 @@
                     <table id="selectTemplateTable" class="selectableTable">
                     <?php
                         $jobApplicationTemplates = [];
-                        if(isset($_SESSION['user']) && isset($_SESSION['userId']))
+                        if(isset($_SESSION['userId']))
                         {
                             $jobApplicationTemplates = getJobApplicationTemplates($dbConn, $_SESSION['userId']);
                         }
@@ -647,7 +541,7 @@
                             echo '</tr>';
                             foreach($jobApplicationTemplates as $jobApplicationTemplate)
                             {
-                                echo '<tr onClick="selectTemplateRowIndex(this)">';
+                                echo '<tr onClick="selectTemplateRowIndex(this, ' . htmlspecialchars($jobApplicationTemplate['id']) . ')">';
                                 foreach($jobApplicationTemplate as $key => $value)
                                 {
                                         echo '<td>';
@@ -681,7 +575,7 @@
                     <table class="table table-hover table-border">
                     <?php
                         $sentApplications = [];
-                        if(isset($_SESSION['user']) && isset($_SESSION['userId']))
+                        if(isset($_SESSION['userId']))
                         {
                             $sentApplications = getJobApplications($dbConn, $_SESSION['userId'], 0, 0); //TODO Fix parameters
                         }

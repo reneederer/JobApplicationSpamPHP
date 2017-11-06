@@ -45,87 +45,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    function rrmAllExcept($directory, $name)
-    {
-        foreach(scandir($directory) as $currentItem)
-        {
-            if($currentItem === '.' || $currentItem === '..' || $currentItem === $name)
-            {
-                continue;
-            }
-            if(is_file($directory . $currentItem))
-            {
-                try
-                {
-                    if(unlink($directory . $currentItem) === false)
-                    {
-                    }
-                }
-                catch(Exception $e)
-                {
-                }
-            }
-            else if(is_dir($directory . $currentItem))
-            {
-                rrmdir($directory . $currentItem . '/');
-            }
-        }
-        if(count(scandir($directory)) === 2)
-        {
-            rmdir($directory);
-        }
-    }
-
-
-    function rrmdir($directory)
-    {
-        foreach(scandir($directory) as $currentItem)
-        {
-            if($currentItem === '.' || $currentItem === '..')
-            {
-                continue;
-            }
-            if(is_file($directory . $currentItem))
-            {
-                try
-                {
-                    if(unlink($directory . $currentItem) === false)
-                    {
-                    }
-                }
-                catch(Exception $e)
-                {
-                }
-            }
-            else if(is_dir($directory . $currentItem))
-            {
-                rrmdir($directory . $currentItem . '/');
-            }
-        }
-        rmdir($directory);
-    }
-
-    function getPDF($odt, $dict, $tmpDirectory)
+    function getPDF($odt, $dict, $tmpDirectory, $pdfFileName)
     {
         $unzipODT = function($odt, $unzipTo)
         {
-            echo $odt;
-            echo "<br>$unzipTo";
             $zip = new ZipArchive();
             $result = $zip->open($odt);
             if($result === false)
@@ -210,16 +133,12 @@
         }
         $unzipODT($odtFile, $outDirectory . 'unzipped/');
         $replaceInDirectory($outDirectory . 'unzipped/', $dict);
-        $zipAsODT($outDirectory . 'pdf/bewerbung123.odt', $outDirectory . 'unzipped/');
-        exec('unoconv ' . $outDirectory . 'pdf/bewerbung123.odt' . ' 2>&1', $output);
-        echo '<br><br>unoconv ' . $outDirectory . 'pdf/bewerbung123.odt' . ' 2>1';
-        echo "<br>";
+        $zipAsODT($outDirectory . "pdf/$pdfFileName.odt", $outDirectory . 'unzipped/');
+        exec('unoconv ' . $outDirectory . "pdf/$pdfFileName.odt" . ' 2>&1', $output);
         if(count($output) >= 1)
         {
             return [];
         }
-        echo "<br>$tmpDirectory";
-        echo "<br>odt: $outDirectory$odtFile.pdf<br>";
 
-        return [$outDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf'];
+        return [$outDirectory . 'pdf/', "$pdfFileName.pdf"];
     }
