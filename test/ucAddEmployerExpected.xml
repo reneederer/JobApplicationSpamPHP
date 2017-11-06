@@ -10,9 +10,10 @@
     <jobApplicationPdfAppendix  name="segitzZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/segitz_zeugnis_small.pdf" />
     <jobApplicationPdfAppendix  name="kmkZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/kmk_zeugnis_small.pdf" />
     <jobApplicationPdfAppendix  name="labenwoldZeugnis" jobApplicationTemplateId="1" pdfFile="/var/www/userFiles/labenwolf_zeugnis_small.pdf" />
-    <employer userId="1" companyName="BJC BEST JOB IT SERVICES GmbH" gender="m" degree="" firstName="Katrin" lastName="Thoms" street="Alte Rabenstraße 32" postcode="20148" city="Hamburg" email="Katrin.Thoms@bjc-its.de" phone="+49 (40) 5 14 00 7180" mobilePhone="" />
-    <employer userId="1" companyName="Deutsche Anwaltshotline AG" gender="m" degree="" firstName="Jonas" lastName="Zimmermann" street="Am Plärrer 7" postcode="90443" city="Nürnberg" email="mail@deutsche-anwaltshotline.de" phone="+49 911 3765690" mobilePhone="" />
-    <employer userId="1" companyName="ANG.-Punkt und gut! GmbH" gender="f" degree="" firstName="Jaqueline" lastName="Strauß" street="Südwestpark 37-41" postcode="90449" city="Nürnberg" email="bewerbung@ang.de" phone="+49 911 525700" mobilePhone="+49 1778876348" />
+    <employer id="1" userId="1" companyName="BJC BEST JOB IT SERVICES GmbH" street="Alte Rabenstraße 32" postcode="20148" city="Hamburg" gender="m" degree="" firstName="Katrin" lastName="Thoms" email="Katrin.Thoms@bjc-its.de" mobilePhone="" phone="+49 (40) 5 14 00 7180" />
+    <employer id="2" userId="1" companyName="Deutsche Anwaltshotline AG" street="Am Plärrer 7" postcode="90443" city="Nürnberg" gender="m" degree="" firstName="Jonas" lastName="Zimmermann" email="mail@deutsche-anwaltshotline.de" mobilePhone="" phone="+49 911 3765690" />
+    <employer id="3" userId="1" companyName="ANG.-Punkt und gut! GmbH" street="Südwestpark 37-41" postcode="90449" city="Nürnberg" gender="f" degree="" firstName="Jaqueline" lastName="Strauß" email="bewerbung@ang.de" mobilePhone="+49 1778876348" phone="+49 911 525700" />
+    <employer id="4" userId="1" companyName="GmbH" street="GmbH Strasse 4b" postcode="90443" city="Nürnberg" gender="m" degree="Dr." firstName="Thomas" lastName="Meier" email="thomas.meier@gmbh.de" mobilePhone="0151 9348934" phone="0911 1931141" />
     <jobApplicationStatusValue id="1" status="Waiting for reply after sending job application" />
     <jobApplicationStatusValue id="2" status="Appointment for job interview" />
     <jobApplicationStatusValue id="3" status="Job application rejected without an interview" />

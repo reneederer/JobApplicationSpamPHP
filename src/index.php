@@ -27,20 +27,13 @@
     $dbConn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $dbConn->exec("SET NAMES utf8");
 
-    function getDBConn()
-    {
-        //TODO delete this function
-        global $dbConn;
-        return $dbConn;
-    }
-
 
     if(isset($_POST['sbmLoginForm']))
     {
-        $userIdAndPassword = getIdAndPasswordByEmail($dbConn, $_POST['txtEmail']);
+        $userIdAndPassword = getIdAndPasswordByEmail($dbConn, $_POST['txtUserEmail']);
         if(!empty($userIdAndPassword) && password_verify($_POST['txtPassword'], $userIdAndPassword['password']))
         {
-            $_SESSION['user']['id'] = identifyUser($dbConn, $_POST['txtEmail']);
+            $_SESSION['user']['id'] = identifyUser($dbConn, $_POST['txtUserEmail']);
         }
     }
     else if(isset($_POST['sbmLogout']))
@@ -49,51 +42,45 @@
     }
     else if(isset($_POST['sbmRegisterForm']))
     {
-        if(filter_var($_POST['txtEmail'], FILTER_VALIDATE_EMAIL))
+        if(filter_var($_POST['txtUserEmail'], FILTER_VALIDATE_EMAIL))
         {
-            addUser($dbConn, $_POST['txtEmail'], password_hash($_POST['txtPassword'], PASSWORD_DEFAULT));
+            addUser($dbConn, $_POST['txtUserEmail'], password_hash($_POST['txtPassword'], PASSWORD_DEFAULT));
         }
         else
         {
             $currentMessage = 'Email doesn\'t look valid.';
         }
     }
-    else if(isset($_POST['sbmSetUserValues']))
+    else if(isset($_POST['sbmSetUserDetails']))
     {
-        $userDetails = new UserDetails($_POST['rbGender'],
-                               $_POST['txtDegree'],
-                               $_POST['txtFirstName'],
-                               $_POST['txtLastName'],
-                               $_POST['txtStreet'],
-                               $_POST['txtPostcode'],
-                               $_POST['txtCity'],
-                               $_POST['txtMobilePhone'],
-                               $_POST['txtPhone']);
-        $checkUserValuesResult = validateUserData($userDetails);
-        if(!$checkUserValuesResult->isValid)
-        {
-            $currentMessage .= join("<br>", $checkUserValuesResult->errors);
-        }
-        else
-        {
-            updateUserValues($dbConn, $_SESSION['user']['id'], $userValues);
-        }
+        ucSetUserDetails($dbConn, $_SESSION['user']['id'], 
+                         $_POST['rbUserGender'],
+                         $_POST['txtUserDegree'],
+                         $_POST['txtUserFirstName'],
+                         $_POST['txtUserLastName'],
+                         $_POST['txtUserStreet'],
+                         $_POST['txtUserPostcode'],
+                         $_POST['txtUserCity'],
+                         $_POST['txtUserMobilePhone'],
+                         $_POST['txtUserPhone'],
+                         $_POST['txtUserBirthday'],
+                         $_POST['txtUserBirthplace'],
+                         $_POST['txtUserMaritalStatus']);
     }
     else if(isset($_POST['sbmAddEmployer']))
     {
-        $employer = 
-            new Employer($_POST['txtCompany'],
-                         $_POST['txtCompanyStreet'],
-                         $_POST['txtCompanyPostcode'],
-                         $_POST['txtCompanyCity'],
-                         $_POST['rbBossGender'],
-                         $_POST['txtBossDegree'],
-                         $_POST['txtBossFirstName'],
-                         $_POST['txtBossLastName'],
-                         $_POST['txtBossEmail'],
-                         $_POST['txtBossMobilePhone'],
-                         $_POST['txtBossPhone']);
-        ucAddEmployer($employer);
+        ucAddEmployer($dbConn, $_SESSION['user']['id'],
+                     $_POST['txtCompany'],
+                     $_POST['txtCompanyStreet'],
+                     $_POST['txtCompanyPostcode'],
+                     $_POST['txtCompanyCity'],
+                     $_POST['rbBossGender'],
+                     $_POST['txtBossDegree'],
+                     $_POST['txtBossFirstName'],
+                     $_POST['txtBossLastName'],
+                     $_POST['txtBossEmail'],
+                     $_POST['txtBossMobilePhone'],
+                     $_POST['txtBossPhone']);
     }
     else if(isset($_POST['sbmDownloadPDF']))
     {
@@ -111,7 +98,7 @@
         {
             $templateDataResult = validateTemplateData(
                 new TemplateData($_POST['txtJobApplicationTemplateName'],
-                                 $_POST['txtEmailSubject'], $_POST['txtEmailBody'],
+                                 $_POST['txtUserEmailSubject'], $_POST['txtUserEmailBody'],
                                  $_FILES['fileODT'],
                                  $_FILES['fileAppendices']));
             if($templateDataResult->isValid){
@@ -122,8 +109,8 @@
                                          , $_SESSION['user']['id']
                                          , $_POST['txtJobApplicationTemplateName']
                                          , $_POST['txtUserAppliesAs']
-                                         , $_POST['txtEmailSubject']
-                                         , $_POST['txtEmailBody']
+                                         , $_POST['txtUserEmailSubject']
+                                         , $_POST['txtUserEmailBody']
                                          , $odtFileName);
                 $templateId = getTemplateIdByName($dbConn, $_SESSION['user']['id'], $_POST['txtJobApplicationTemplateName']);
                 for($i = 0; $i < count($_FILES['fileAppendices']['tmp_name']); ++$i)
@@ -158,7 +145,7 @@
         }
         else
         {
-            $userValuesDict =
+            $userDetailsDict =
                 [ '$meinTitel' => $userDetails->degree
                 , '$meineAnrede' => $userDetails->gender
                 , '$meinVorname' => $userDetails->firstName
@@ -172,7 +159,7 @@
                 , '$meinGeburtsdatum' => $userDetails->birthday
                 , '$meinGeburtsort' => $userDetails->birthplace
                 , '$meinFamilienstand' => $userDetails->maritalStatus]; 
-            $dict = $employerValuesDict + $userValuesDict +
+            $dict = $employerValuesDict + $userDetailsDict +
                 [ "\$geehrter" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'geehrter' : 'geehrte'
                 , "\$chefAnredeBriefkopf" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herrn' : 'Frau'
                 , "\$datumHeute" => date('d.m.Y')];
@@ -452,7 +439,7 @@
                             <table>
                                 <tr>
                                     <td>Email:</td>
-                                    <td><input type="text" value="" name="txtEmail" /></td>
+                                    <td><input type="text" value="" name="txtUserEmail" /></td>
                                 </tr>
                                 <tr>
                                     <td>Password:</td>
@@ -473,7 +460,7 @@
                             <table>
                                 <tr>
                                     <td>Email:</td>
-                                    <td><input type="text" value="" name="txtEmail" /></td>
+                                    <td><input type="text" value="" name="txtUserEmail" /></td>
                                 </tr>
                                 <tr>
                                     <td>Password:</td>
@@ -518,11 +505,11 @@
                       <input type="text" class="form-control" id="txtUserAppliesAs" name="txtUserAppliesAs" value="<?php echo htmlspecialchars($_POST['txtUserAppliesAs'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtEmailSubject">Email-Betreff</label>
-                      <input type="text" class="form-control" id="txtEmailSubject" name="txtEmailSubject" value="<?php echo htmlspecialchars($_POST['txtEmailSubject'] ?? ''); ?>" />
+                      <label for="txtUserEmailSubject">Email-Betreff</label>
+                      <input type="text" class="form-control" id="txtUserEmailSubject" name="txtUserEmailSubject" value="<?php echo htmlspecialchars($_POST['txtUserEmailSubject'] ?? ''); ?>" />
                   </div>
-                      <label for="txtEmailBody">Email-Body</label>
-                      <textarea name="txtEmailBody" class="form-control" id="txtEmailBody" cols="100" rows="15"><?php echo htmlspecialchars($_POST['txtEmailBody'] ?? ''); ?></textarea>
+                      <label for="txtUserEmailBody">Email-Body</label>
+                      <textarea name="txtUserEmailBody" class="form-control" id="txtUserEmailBody" cols="100" rows="15"><?php echo htmlspecialchars($_POST['txtUserEmailBody'] ?? ''); ?></textarea>
                   <div class="form-group">
                       <label for="fileODT">Vorlage (*.odt oder *.docx)</label>
                       <input type="file" name="fileODT" id="fileODT" accept=".odt,.docx" />
@@ -545,48 +532,60 @@
                   <div class="form-group">
                       <label for="">Geschlecht</label>
                       <div class="form-control">
-                          <input type="hidden" name="rbGender" value="x" />
-                          <label class="radio-inline"><input type="radio" name="rbGender" value="m" <?php if(isset($_POST['rbGender']) && $_POST['rbGender'] === 'm') echo 'checked="checked"'; ?>/>M&auml;nnlich</label>
-                          <label class="radio-inline"><input type="radio" name="rbGender" value="f" <?php if(isset($_POST['rbGender']) && $_POST['rbGender'] === 'f') echo 'checked="checked"'; ?>/>Weiblich</label>
+                          <input type="hidden" name="rbUserGender" value="x" />
+                          <label class="radio-inline"><input type="radio" name="rbUserGender" value="m" <?php if(isset($_POST['rbUserGender']) && $_POST['rbUserGender'] === 'm') echo 'checked="checked"'; ?>/>M&auml;nnlich</label>
+                          <label class="radio-inline"><input type="radio" name="rbUserGender" value="f" <?php if(isset($_POST['rbUserGender']) && $_POST['rbUserGender'] === 'f') echo 'checked="checked"'; ?>/>Weiblich</label>
                       </div>
                   </div>
                   <div class="form-group">
-                      <label for="txtDegree">Titel</label>
-                      <input class="form-control" type="text" name="txtDegree" id="txtDegree" value="<?php echo htmlspecialchars($_POST['txtDegree'] ?? ''); ?>" />
+                      <label for="txtUserDegree">Titel</label>
+                      <input class="form-control" type="text" name="txtUserDegree" id="txtUserDegree" value="<?php echo htmlspecialchars($_POST['txtUserDegree'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtFirstName">Vorname</label>
-                      <input class="form-control" type="text" name="txtFirstName" id="txtFirstName" value="<?php echo htmlspecialchars($_POST['txtFirstName'] ?? ''); ?>" />
+                      <label for="txtUserFirstName">Vorname</label>
+                      <input class="form-control" type="text" name="txtUserFirstName" id="txtUserFirstName" value="<?php echo htmlspecialchars($_POST['txtUserFirstName'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtLastName">Nachname</label>
-                      <input class="form-control" type="text" name="txtLastName" id="txtLastName" value="<?php echo htmlspecialchars($_POST['txtLastName'] ?? ''); ?>" />
+                      <label for="txtUserLastName">Nachname</label>
+                      <input class="form-control" type="text" name="txtUserLastName" id="txtUserLastName" value="<?php echo htmlspecialchars($_POST['txtUserLastName'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtStreet">Stra&szlig;e</label>
-                      <input class="form-control" type="text" name="txtStreet" id="txtStreet" value="<?php echo htmlspecialchars($_POST['txtStreet'] ?? ''); ?>" />
+                      <label for="txtUserStreet">Stra&szlig;e</label>
+                      <input class="form-control" type="text" name="txtUserStreet" id="txtUserStreet" value="<?php echo htmlspecialchars($_POST['txtUserStreet'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtPostcode">Postleitzahl</label>
-                      <input class="form-control" type="text" name="txtPostcode" id="txtPostcode" value="<?php echo htmlspecialchars($_POST['txtPostcode'] ?? ''); ?>" />
+                      <label for="txtUserPostcode">Postleitzahl</label>
+                      <input class="form-control" type="text" name="txtUserPostcode" id="txtUserPostcode" value="<?php echo htmlspecialchars($_POST['txtUserPostcode'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtCity">Stadt</label>
-                      <input class="form-control" type="text" name="txtCity" id="txtCity" value="<?php echo htmlspecialchars($_POST['txtCity'] ?? ''); ?>" />
+                      <label for="txtUserCity">Stadt</label>
+                      <input class="form-control" type="text" name="txtUserCity" id="txtUserCity" value="<?php echo htmlspecialchars($_POST['txtUserCity'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtEmail">Email</label>
-                      <input class="form-control" type="text" name="txtEmail" id="txtEmail" value="<?php echo htmlspecialchars($_POST['txtEmail'] ?? ''); ?>" />
+                      <label for="txtUserEmail">Email</label>
+                      <input class="form-control" type="text" name="txtUserEmail" id="txtUserEmail" value="<?php echo htmlspecialchars($_POST['txtUserEmail'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtMobilePhone">Telefon mobil</label>
-                      <input class="form-control" type="text" name="txtMobilePhone" id="txtMobilePhone" value="<?php echo htmlspecialchars($_POST['txtMobilePhone'] ?? ''); ?>" />
+                      <label for="txtUserMobilePhone">Telefon mobil</label>
+                      <input class="form-control" type="text" name="txtUserMobilePhone" id="txtUserMobilePhone" value="<?php echo htmlspecialchars($_POST['txtUserMobilePhone'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtPhone">Telefon fest</label>
-                      <input class="form-control" type="text" name="txtPhone" id="txtPhone" value="<?php echo htmlspecialchars($_POST['txtPhone'] ?? ''); ?>" />
+                      <label for="txtUserPhone">Telefon fest</label>
+                      <input class="form-control" type="text" name="txtUserPhone" id="txtUserPhone" value="<?php echo htmlspecialchars($_POST['txtUserPhone'] ?? ''); ?>" />
                   </div>
-                      <input type="submit" name="sbmSetUserValues" value="Deine Werte &auml;ndern"/>
+                  <div class="form-group">
+                      <label for="txtUserBirthday">Geburtstag</label>
+                      <input class="form-control" type="text" name="txtUserBirthday" id="txtUserBirthday" value="<?php echo htmlspecialchars($_POST['txtUserBirthday'] ?? ''); ?>" />
+                  </div>
+                  <div class="form-group">
+                      <label for="txtUserBirthplace">Geburtsort</label>
+                      <input class="form-control" type="text" name="txtUserBirthplace" id="txtUserBirthplace" value="<?php echo htmlspecialchars($_POST['txtUserBirthplace'] ?? ''); ?>" />
+                  </div>
+                  <div class="form-group">
+                      <label for="txtUserMaritalStatus">Familienstand</label>
+                      <input class="form-control" type="text" name="txtUserMaritalStatus" id="txtUserMaritalStatus" value="<?php echo htmlspecialchars($_POST['txtUserMaritalStatus'] ?? ''); ?>" />
+                  </div>
+                      <input type="submit" name="sbmSetUserDetails" value="Deine Werte &auml;ndern"/>
               </form>
           </div>
 
@@ -635,15 +634,15 @@
                             </div>
                             <label for="txtBossDegree">Chef-Titel</label>
                             <input class="form-control" type="text" name="txtBossDegree" value="<?php echo htmlspecialchars($currentEmployer['$chefTitel'] ?? ''); ?>"/>
-                            <label for="txtFirstName">Chef-Vorname</label>
+                            <label for="txtBossFirstName">Chef-Vorname</label>
                             <input class="form-control" type="text" name="txtBossFirstName" value="<?php echo htmlspecialchars($currentEmployer['$chefVorname'] ?? ''); ?>"/>
-                            <label for="txtLastName">Chef-Nachname</label>
+                            <label for="txtBossLastName">Chef-Nachname</label>
                             <input class="form-control" type="text" name="txtBossLastName" value="<?php echo htmlspecialchars($currentEmployer['$chefNachname'] ?? ''); ?>"/>
-                            <label for="txtEmail">Email</label>
+                            <label for="txtBossEmail">Email</label>
                             <input class="form-control" type="text" name="txtBossEmail" value="<?php echo htmlspecialchars($currentEmployer['$firmaEmail'] ?? ''); ?>"/>
-                            <label for="txtMobilePhone">Telefon mobil</label>
+                            <label for="txtBossMobilePhone">Telefon mobil</label>
                             <input class="form-control" type="text" name="txtBossMobilePhone" value="<?php echo htmlspecialchars($currentEmployer['$firmaMobil'] ?? ''); ?>"/>
-                            <label for="txtPhone">Telefon fest</label>
+                            <label for="txtBossPhone">Telefon fest</label>
                             <input class="form-control" type="text" name="txtBossPhone" value="<?php echo htmlspecialchars($currentEmployer['$firmaTelefon'] ?? ''); ?>"/>
                             <input type="submit" name="sbmAddEmployer" value="Arbeitgeber hinzuf&uuml;gen" />
                 </form>

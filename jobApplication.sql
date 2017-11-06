@@ -48,6 +48,7 @@ insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statu
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage) values(4, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "");
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage) values(5, str_to_date("26.01.2017", "%d.%m.%Y"), null, 1, "");
 insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage) values(6, str_to_date("26.10.2017", "%d.%m.%Y"), null, 1, "Forwarded by Ms Götz");
+insert into jobApplicationStatus(jobApplicationId, statusChangedOn, dueOn, statusValueId, statusMessage) values(5, str_to_date("06.11.2017", "%d.%m.%Y"), null, 3, "");
 
 
 

@@ -102,39 +102,9 @@
 
 
 
-function validateUserData($userData)
+function validateUserDetails($userData)
 {
     $taskResult = new TaskResult(true, [], []);
-    if($userData->gender !== 'f' && $userData->gender !== 'm')
-    {
-        $taskResult->isValid = false;
-        $taskResult->errors[] = 'Geschlecht muss "m" oder "f" sein.';
-    }
-    if(trim($userData->firstName) === '')
-    {
-        $taskResult->isValid = false;
-        $taskResult->errors[] = 'Der Vorname darf nicht leer sein';
-    }
-    if(trim($userData->lastName) === '')
-    {
-        $taskResult->isValid = false;
-        $taskResult->errors[] = 'Der Nachname darf nicht leer sein';
-    }
-    if(trim($userData->street) === '')
-    {
-        $taskResult->isValid = false;
-        $taskResult->errors[] = 'Die Stra&szlig;e darf nicht leer sein';
-    }
-    if(trim($userData->postcode) === '')
-    {
-        $taskResult->isValid = false;
-        $taskResult->errors[] = 'Die Postleitzahl darf nicht leer sein';
-    }
-    if(trim($userData->city) === '')
-    {
-        $taskResult->isValid = false;
-        $taskResult->errors[] = 'Die Stadt darf nicht leer sein';
-    }
     return $taskResult;
 }
 
@@ -208,62 +178,36 @@ function validateEmployer($employer)
 
 
 
-    class UserDetails
+class UserDetails
+{
+    public $gender;
+    public $degree;
+    public $firstName;
+    public $lastName;
+    public $street;
+    public $postcode;
+    public $city;
+    public $phone;
+    public $mobilePhone;
+    public $birthday;
+    public $birthplace;
+    public $maritalStatus;
+    function __construct($gender, $degree, $firstName, $lastName, $street, $postcode, $city, $mobilePhone, $phone, $birthday, $birthplace, $maritalStatus)
     {
-        public $gender;
-        public $degree;
-        public $firstName;
-        public $lastName;
-        public $street;
-        public $postcode;
-        public $city;
-        public $phone;
-        public $mobilePhone;
-        public $birthplace;
-        public $birthday;
-        public $maritalStatus;
-        function __construct($gender, $degree, $firstName, $lastName, $street, $postcode, $city, $mobilePhone, $phone, $birthplace, $birthday, $maritalStatus)
-        {
-            $this->gender = $gender;
-            $this->degree = $degree;
-            $this->firstName = $firstName;
-            $this->lastName = $lastName;
-            $this->street = $street;
-            $this->postcode = $postcode;
-            $this->city = $city;
-            $this->mobilePhone = $mobilePhone;
-            $this->phone = $phone;
-            $this->birthplace = $birthplace;
-            $this->birthday = $birthday;
-            $this->maritalStatus = $maritalStatus;
-        }
-    };
-    function __construct($degree, $gender, $firstName, $lasstName, $street, $postcode, $city, $email, $phone, $mobilePhone, $birthday, $birthplace, $maritalStatus)
-    {
-        $this->degree = $degree;
         $this->gender = $gender;
+        $this->degree = $degree;
         $this->firstName = $firstName;
-        $this->lastName = $lasstName;
+        $this->lastName = $lastName;
         $this->street = $street;
         $this->postcode = $postcode;
         $this->city = $city;
-        $this->email = $email;
-        $this->phone = $phone;
         $this->mobilePhone = $mobilePhone;
+        $this->phone = $phone;
         $this->birthday = $birthday;
         $this->birthplace = $birthplace;
         $this->maritalStatus = $maritalStatus;
     }
-
-
-
-
-
-
-
-
-
-
+}
 
 
 

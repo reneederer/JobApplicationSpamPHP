@@ -292,7 +292,7 @@
         }
     }
 
-    function updateUserValues($dbConn, $userId, $user)
+    function setUserDetails($dbConn, $userId, $userDetails)
     {
         $statement = $dbConn->prepare('update userDetails set
             gender = :gender,
@@ -302,20 +302,25 @@
             street = :street,
             postcode = :postcode,
             city = :city,
-            email = :email,
             mobilePhone = :mobilePhone,
-            phone = :phone where userId = :userId');
+            phone = :phone,
+            birthday = :birthday,
+            birthplace = :birthplace,
+            maritalStatus = :maritalStatus
+            where userId = :userId');
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':gender', $user->gender);
-        $statement->bindParam(':degree', $user->degree);
-        $statement->bindParam(':firstName', $user->firstName);
-        $statement->bindParam(':lastName', $user->lastName);
-        $statement->bindParam(':street', $user->street);
-        $statement->bindParam(':postcode', $user->postcode);
-        $statement->bindParam(':city', $user->city);
-        $statement->bindParam(':email', $user->email);
-        $statement->bindParam(':mobilePhone', $user->mobilePhone);
-        $statement->bindParam(':phone', $user->phone);
+        $statement->bindParam(':gender', $userDetails->gender);
+        $statement->bindParam(':degree', $userDetails->degree);
+        $statement->bindParam(':firstName', $userDetails->firstName);
+        $statement->bindParam(':lastName', $userDetails->lastName);
+        $statement->bindParam(':street', $userDetails->street);
+        $statement->bindParam(':postcode', $userDetails->postcode);
+        $statement->bindParam(':city', $userDetails->city);
+        $statement->bindParam(':mobilePhone', $userDetails->mobilePhone);
+        $statement->bindParam(':phone', $userDetails->phone);
+        $statement->bindParam(':birthday', $userDetails->birthday);
+        $statement->bindParam(':birthplace', $userDetails->birthplace);
+        $statement->bindParam(':maritalStatus', $userDetails->maritalStatus);
         $result = $statement->execute();
         if($result === false)
         {
