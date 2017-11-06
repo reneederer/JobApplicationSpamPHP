@@ -41,7 +41,7 @@
             }
             if($odtFile['size'] > 1000000)
             {
-                throw new \Exception('Template file should be smaller than 1MB.');
+                throw new \Exception('Template file should be smaller than 1 MB.');
             }
             for($i = 0; $i < min(count($pdfFiles['tmp_name']), 10); ++$i)
             {
@@ -51,14 +51,14 @@
                 }
                 if($pdfFiles['size'][$i] > 1000000)
                 {
-                    throw new \Exception('PDF file ' . ($i + 1) . ' should be smaller than 1MB.');
+                    throw new \Exception('PDF file ' . ($i + 1) . ' should be smaller than 1 MB.');
                 }
                 $this->pdfFileNames[] = $pdfFiles['name'][$i];
             }
-            $this->templateName = strip_tags($templateName);
-            $this->emailSubject = strip_tags($emailSubject);
-            $this->emailBody = strip_tags($emailBody);
-            $this->odtFileName = strip_tags($odtFile['name']);
+            $this->templateName = $templateName;
+            $this->emailSubject = $emailSubject;
+            $this->emailBody = $emailBody;
+            $this->odtFileName = $odtFile['name'];
         }
     };
     function validateTemplateData($templateData)
@@ -100,32 +100,6 @@
 
 
 
-class User
-{
-    public $gender;
-    public $degree;
-    public $firstName;
-    public $lastName;
-    public $street;
-    public $postCode;
-    public $city;
-    public $email;
-    public $mobilePhone;
-    public $phone;
-    function __construct($gender, $degree, $firstName, $lastName, $street, $postCode, $city, $email, $mobilePhone, $phone)
-    {
-        $this->gender = strip_tags($gender);
-        $this->degree = strip_tags($degree);
-        $this->firstName = strip_tags($firstName);
-        $this->lastName = strip_tags($lastName);
-        $this->street = strip_tags($street);
-        $this->postCode = strip_tags($postCode);
-        $this->city = strip_tags($city);
-        $this->email = strip_tags($email);
-        $this->mobilePhone = strip_tags($mobilePhone);
-        $this->phone = strip_tags($phone);
-    }
-};
 
 
 function validateUserData($userData)
@@ -151,7 +125,7 @@ function validateUserData($userData)
         $taskResult->isValid = false;
         $taskResult->errors[] = 'Die Stra&szlig;e darf nicht leer sein';
     }
-    if(trim($userData->postCode) === '')
+    if(trim($userData->postcode) === '')
     {
         $taskResult->isValid = false;
         $taskResult->errors[] = 'Die Postleitzahl darf nicht leer sein';
@@ -174,24 +148,24 @@ class Employer
     public $firstName;
     public $lastName;
     public $street;
-    public $postCode;
+    public $postcode;
     public $city;
     public $email;
     public $mobilePhone;
     public $phone;
-    function __construct($company, $street, $postCode, $city, $gender, $degree, $firstName, $lastName, $email, $mobilePhone, $phone)
+    function __construct($company, $street, $postcode, $city, $gender, $degree, $firstName, $lastName, $email, $mobilePhone, $phone)
     {
-        $this->company = strip_tags($company);
-        $this->gender = strip_tags($gender);
-        $this->degree = strip_tags($degree);
-        $this->firstName = strip_tags($firstName);
-        $this->lastName = strip_tags($lastName);
-        $this->street = strip_tags($street);
-        $this->postCode = strip_tags($postCode);
-        $this->city = strip_tags($city);
-        $this->email = strip_tags($email);
-        $this->mobilePhone = strip_tags($mobilePhone);
-        $this->phone = strip_tags($phone);
+        $this->company = $company;
+        $this->gender = $gender;
+        $this->degree = $degree;
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
+        $this->street = $street;
+        $this->postcode = $postcode;
+        $this->city = $city;
+        $this->email = $email;
+        $this->mobilePhone = $mobilePhone;
+        $this->phone = $phone;
     }
 };
 
@@ -219,7 +193,7 @@ function validateEmployer($employer)
         $taskResult->isValid = false;
         $taskResult->errors[] = 'Die Stra&szlig;e darf nicht leer sein';
     }
-    if(trim($employer->postCode) === '')
+    if(trim($employer->postcode) === '')
     {
         $taskResult->isValid = false;
         $taskResult->errors[] = 'Die Postleitzahl darf nicht leer sein';
@@ -234,6 +208,52 @@ function validateEmployer($employer)
 
 
 
+    class UserDetails
+    {
+        public $gender;
+        public $degree;
+        public $firstName;
+        public $lastName;
+        public $street;
+        public $postcode;
+        public $city;
+        public $phone;
+        public $mobilePhone;
+        public $birthplace;
+        public $birthday;
+        public $maritalStatus;
+        function __construct($gender, $degree, $firstName, $lastName, $street, $postcode, $city, $mobilePhone, $phone, $birthplace, $birthday, $maritalStatus)
+        {
+            $this->gender = $gender;
+            $this->degree = $degree;
+            $this->firstName = $firstName;
+            $this->lastName = $lastName;
+            $this->street = $street;
+            $this->postcode = $postcode;
+            $this->city = $city;
+            $this->mobilePhone = $mobilePhone;
+            $this->phone = $phone;
+            $this->birthplace = $birthplace;
+            $this->birthday = $birthday;
+            $this->maritalStatus = $maritalStatus;
+        }
+    };
+    function __construct($degree, $gender, $firstName, $lasstName, $street, $postcode, $city, $email, $phone, $mobilePhone, $birthday, $birthplace, $maritalStatus)
+    {
+        $this->degree = $degree;
+        $this->gender = $gender;
+        $this->firstName = $firstName;
+        $this->lastName = $lasstName;
+        $this->street = $street;
+        $this->postcode = $postcode;
+        $this->city = $city;
+        $this->email = $email;
+        $this->phone = $phone;
+        $this->mobilePhone = $mobilePhone;
+        $this->birthday = $birthday;
+        $this->birthplace = $birthplace;
+        $this->maritalStatus = $maritalStatus;
+    }
 
 
 

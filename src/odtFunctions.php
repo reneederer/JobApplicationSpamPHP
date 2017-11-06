@@ -18,8 +18,13 @@
         return $str;
     }
 
+
     function replaceAllInStringRemoveSpanTags($str, $dict)
     {
+        if(trim($str) === '')
+        {
+            return $str;
+        }
         $dom = new DomDocument();
         libxml_use_internal_errors(true);
         $dom->loadXML(mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8'));
@@ -37,6 +42,23 @@
         }
         return $str;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     function rrmAllExcept($directory, $name)
     {
@@ -98,16 +120,48 @@
         rmdir($directory);
     }
 
-    function getPDF($odt, $dict)
+    function getPDF($odt, $dict, $tmpDirectory)
     {
         $unzipODT = function($odt, $unzipTo)
         {
-            exec("unzip $odt -d $unzipTo");
+            echo $odt;
+            echo "<br>$unzipTo";
+            $zip = new ZipArchive();
+            $result = $zip->open($odt);
+            if($result === false)
+            {
+                die("FASELKFASDL");
+            }
+            $zip->extractTo($unzipTo);
+            $zip->close();
         };
 
-        $zipAsODT = function($zipFileName, $directory)
+        $zipAsODT = function($zipFileFullPath, $directory)
         {
-            exec("zip -r" .  ($directory . $zipFileName) . " " . $directory);
+            $zipAsODT1 = function($zip, $baseDirectory, $currentDirectory) use(&$zipAsODT1)
+            {
+                $directoryContent = scandir($baseDirectory . $currentDirectory);
+                foreach($directoryContent as $currentItem)
+                {
+                    if($currentItem == '.' || $currentItem == '..' || strpos(".odt", $currentItem) === true)
+                    {
+                        continue;
+                    }
+                    if(is_file($baseDirectory . $currentDirectory . $currentItem))
+                    {
+                        $zip->addFile($baseDirectory . $currentDirectory . $currentItem, str_replace('\\', '/', $currentDirectory) . $currentItem);
+                    }
+                    else if(is_dir($baseDirectory . $currentDirectory. $currentItem))
+                    {
+                        $zip->addEmptyDir(str_replace('\\', '/', $currentDirectory) . $currentItem);
+                        $zipAsODT1($zip, $baseDirectory, $currentDirectory . $currentItem . '/');
+                    }
+                }
+            };
+            $zip = new ZipArchive;
+            $zip->open($zipFileFullPath, ZipArchive::CREATE);
+            $zipAsODT1($zip, $directory, '');
+            $zip->close();
         };
 
         $replaceInDirectory = function($directory, $dict) use (&$replaceInDirectory)
@@ -115,19 +169,19 @@
             $replaceInFile = function($file, $dict)
             {
                 $str = file_get_contents($file);
-                $str = replaceAllInStringRemoveSpanTags($str, $dict);
+                $str = replaceAllInString($str, $dict);
                 file_put_contents($file, $str);
             };
             $directoryContent = scandir($directory);
             foreach($directoryContent as $currentItem)
             {
-                if($currentItem == "." || $currentItem == "..")
+                if($currentItem == '.' || $currentItem == '..')
                 {
                     continue;
                 }
                 if(is_file($directory . $currentItem))
                 {
-                    //if($currentItem == "content.xml")
+                    //if($currentItem == 'content.xml')
                     {
                         $replaceInFile($directory . $currentItem, $dict);
                     }
@@ -138,28 +192,34 @@
                 }
             }
         };
-        $tmpDirectory = '';
-        do
+
+        if(!file_exists($tmpDirectory))
         {
-            $tmpDirectory = sys_get_temp_dir() . '/' . uniqid() . '/';
+            mkdir($tmpDirectory, 0777, true);
         }
-        while(is_dir($tmpDirectory));
-        mkdir($tmpDirectory);
-        $odtFile = 'yourJobApplication.odt';
-        $directory = $tmpDirectory;
-        file_put_contents($tmpDirectory . $odtFile, $odt);
-        $outDirectory = $tmpDirectory . "out/";
-        $unzipODT($tmpDirectory . $odtFile, $outDirectory);
-        $replaceInDirectory($outDirectory, $dict);
-        $zipAsODT($odtFile, $outDirectory);
-        $output = "";
-        exec('unoconv ' . $outDirectory . $odtFile . '" 2>&1', $output);
+
+        $odtFile = $odt;
+        $outDirectory = getNonExistingFileName($tmpDirectory, '') . '/';
+        if(!file_exists($outDirectory . 'pdf/'))
+        {
+            mkdir($outDirectory . 'pdf/', 0777, true);
+        }
+        if(!file_exists($outDirectory . 'unzipped/'))
+        {
+            mkdir($outDirectory . 'unzipped/', 0777, true);
+        }
+        $unzipODT($odtFile, $outDirectory . 'unzipped/');
+        $replaceInDirectory($outDirectory . 'unzipped/', $dict);
+        $zipAsODT($outDirectory . 'pdf/bewerbung123.odt', $outDirectory . 'unzipped/');
+        exec('unoconv ' . $outDirectory . 'pdf/bewerbung123.odt' . ' 2>&1', $output);
+        echo '<br><br>unoconv ' . $outDirectory . 'pdf/bewerbung123.odt' . ' 2>1';
+        echo "<br>";
         if(count($output) >= 1)
         {
-            var_dump($output);
             return [];
         }
-        //rrmAllExcept($tmpDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf');
+        echo "<br>$tmpDirectory";
+        echo "<br>odt: $outDirectory$odtFile.pdf<br>";
+
         return [$outDirectory, substr($odtFile, 0, strlen($odtFile) - 4) . '.pdf'];
     }
-?>

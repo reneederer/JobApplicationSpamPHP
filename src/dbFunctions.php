@@ -44,9 +44,10 @@
         }
     }
 
+
     function getJobApplicationTemplate($dbConn, $userId, $templateId)
     {
-        $statement = $dbConn->prepare('select userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile from jobApplicationTemplate where userId=:userId and id=:templateId');
+        $statement = $dbConn->prepare('select userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile from jobApplicationTemplate where userId=:userId and id=:templateId limit 1');
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
@@ -60,7 +61,14 @@
             throw new \Exception('Failed to setFetchMode().');
         }
         $rows = $statement->fetchAll();
-        return $rows[0];
+        if(count($rows) === 1)
+        {
+            return $rows[0];
+        }
+        else
+        {
+            throw new \Exception('Query failed to find job application template.');
+        }
     }
 
     function addJobApplicationTemplate($dbConn, $userId, $templateName, $userAppliesAs, $emailSubject, $emailBody, $odtFile)
@@ -155,22 +163,29 @@
         }
     }
 
-    function addUser($dbConn, $name, $password)
+    function addUser($dbConn, $email, $password)
     {
         $statement = $dbConn->prepare('insert into user(name, password) values(:name, :password)');
-        $statement->bindParam(':name', $name);
+        $statement->bindParam(':email', $email);
         $statement->bindParam(':password', $password);
         $result = $statement->execute();
         if($result === false)
         {
             throw new \Exception('Query failed to add user.');
         }
+        $statement = $dbConn->prepare("insert into userDetails(userId, degree, gender, firstName, lastName, street, postcode, city, phone, mobilePhone, birthday, birthplace, maritalStatus)
+            values(last_insert_id(), '', '', '', '', '', '', '', '', '', '', '', '')");
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add user address.');
+        }
     }
 
-    function getIdAndPasswordByUserName($dbConn, $userName)
+    function getIdAndPasswordByEmail($dbConn, $email)
     {
-        $statement = $dbConn->prepare('select id, password from user where name=:userName limit 1');
-        $statement->bindParam(':userName', $userName);
+        $statement = $dbConn->prepare('select id, password from user where email=:email limit 1');
+        $statement->bindParam(':email', $email);
         $result = $statement->execute();
         if($result === false)
         {
@@ -192,10 +207,31 @@
         }
     }
 
-    function identifyUser($dbConn, $userName)
+    function getEmailByUserId($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select id from user where name=:userName');
-        $statement->bindParam(':userName', $userName);
+        $statement = $dbConn->prepare('select email from user where id = :userId limit 1');
+        $statement->bindParam(':userId', $userId);
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to find user.');
+        }
+        $rows = $statement->fetchAll();
+        if(count($rows) !== 1)
+        {
+            throw new \Exception('Email not found.');
+        }
+        else
+        {
+            return $rows[0]['email'];
+        }
+    }
+
+
+    function identifyUser($dbConn, $email)
+    {
+        $statement = $dbConn->prepare('select id from user where email=:email limit 1');
+        $statement->bindParam(':email', $email);
         $result = $statement->execute();
         if($result === false)
         {
@@ -210,17 +246,17 @@
         $rows = $statement->fetchAll();
         if(count($rows) === 0)
         {
-            return Array();
+            throw new \Exception('Email or password wrong.');
         }
         else
         {
-            return Array('id' => $rows[0]['id'], 'name' => $userName);
+            return $rows[0]['id'];
         }
     }
 
-    function getUserValues($dbConn, $userId)
+    function getUserDetails($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select firstName, lastName, gender, degree, street, postCode, city, email, mobilePhone, phone, birthday, birthplace, maritalStatus from userAddress where userId=:userId');
+        $statement = $dbConn->prepare('select gender, degree, firstName, lastName, street, postcode, city, phone, mobilePhone, birthday, birthplace, maritalStatus from userDetails where userId=:userId limit 1');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
         if($result === false)
@@ -236,34 +272,46 @@
         $rows = $statement->fetchAll();
         if(count($rows) !== 1)
         {
-            return Array();
+            throw new \Exception('No user details found');
         }
         else
         {
-            return $rows[0];
+            return new UserDetails(
+                $rows[0]['gender'],
+                $rows[0]['degree'],
+                $rows[0]['firstName'],
+                $rows[0]['lastName'],
+                $rows[0]['street'],
+                $rows[0]['postcode'],
+                $rows[0]['city'],
+                $rows[0]['phone'],
+                $rows[0]['mobilePhone'],
+                $rows[0]['birthday'],
+                $rows[0]['birthplace'],
+                $rows[0]['maritalStatus']);
         }
     }
 
     function updateUserValues($dbConn, $userId, $user)
     {
-        $statement = $dbConn->prepare('update userAddress set
+        $statement = $dbConn->prepare('update userDetails set
             gender = :gender,
             degree = :degree,
             firstName = :firstName,
             lastName = :lastName,
             street = :street,
-            postCode = :postCode,
+            postcode = :postcode,
             city = :city,
             email = :email,
             mobilePhone = :mobilePhone,
             phone = :phone where userId = :userId');
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':gender', $gender);
-        $statement->bindParam(':degree', $degree);
+        $statement->bindParam(':gender', $user->gender);
+        $statement->bindParam(':degree', $user->degree);
         $statement->bindParam(':firstName', $user->firstName);
         $statement->bindParam(':lastName', $user->lastName);
         $statement->bindParam(':street', $user->street);
-        $statement->bindParam(':postCode', $user->postCode);
+        $statement->bindParam(':postcode', $user->postcode);
         $statement->bindParam(':city', $user->city);
         $statement->bindParam(':email', $user->email);
         $statement->bindParam(':mobilePhone', $user->mobilePhone);
@@ -278,7 +326,7 @@
     function getJobApplications($dbConn, $userId, $fromDate, $toDate)
     {
         $statement = $dbConn->prepare('select jobApplicationStatus.statusChangedOn, jobApplicationStatus.dueOn, jobApplicationStatus.statusValueId, employer.companyName, employer.degree, employer.firstName
-            , employer.lastName, employer.email, employer.mobilePhone, employer.phone, employer.street, employer.postCode, employer.city
+            , employer.lastName, employer.email, employer.mobilePhone, employer.phone, employer.street, employer.postcode, employer.city
             from jobApplication
             join employer on jobApplication.employerId = employer.id and jobApplication.userId = :userId
             join jobApplicationStatus on jobApplicationStatus.jobApplicationId = jobApplication.id');
@@ -295,7 +343,7 @@
                      , employer.mobilePhone
                      , employer.phone
                      , employer.street
-                     , employer.postCode
+                     , employer.postcode
                      , employer.city
                 from jobApplication
                 join employer on jobApplication.employerId = employer.id and jobApplication.userId = :userId
@@ -315,7 +363,7 @@
                      , employer.mobilePhone
                      , employer.phone
                      , employer.street
-                     , employer.postCode
+                     , employer.postcode
                      , employer.city');
 
 
@@ -363,7 +411,7 @@
 
     function getEmployers($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select companyName, street, postCode, city, email, mobilePhone, phone, gender, degree, firstName, lastName
+        $statement = $dbConn->prepare('select companyName, street, postcode, city, email, mobilePhone, phone, gender, degree, firstName, lastName
             from employer where userId = :userId');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
@@ -382,7 +430,7 @@
 
     function getEmployer($dbConn, $userId, $employerId)
     {
-        $statement = $dbConn->prepare('select companyName as "\$firmaName", street as "\$firmaStrasse", postCode as "\$firmaPlz", city as "\$firmaStadt", email as "\$firmaEmail", mobilePhone as "\$firmaMobil", phone as "\$firmaTelefon", gender as "\$chefAnrede", degree as "\$chefTitel", firstName as "\$chefVorname", lastName as "\$chefNachname"
+        $statement = $dbConn->prepare('select companyName as "\$firmaName", street as "\$firmaStrasse", postcode as "\$firmaPlz", city as "\$firmaStadt", email as "\$firmaEmail", mobilePhone as "\$firmaMobil", phone as "\$firmaTelefon", gender as "\$chefAnrede", degree as "\$chefTitel", firstName as "\$chefVorname", lastName as "\$chefNachname"
             from employer where userId = :userId and id = :employerId');
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':employerId', $employerId);
@@ -427,13 +475,13 @@
     function addEmployer($dbConn, $userId, $employer)
     {
         $statement = $dbConn->prepare('insert into employer
-            (userId, companyName, street, postCode, city, email, mobilePhone, phone, gender, degree, firstName, lastName)
-            values (:userId, :companyName, :street, :postCode, :city, :email, :mobilePhone, :phone, :gender, :degree, :firstName, :lastName)');
+            (userId, companyName, street, postcode, city, email, mobilePhone, phone, gender, degree, firstName, lastName)
+            values (:userId, :companyName, :street, :postcode, :city, :email, :mobilePhone, :phone, :gender, :degree, :firstName, :lastName)');
 
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':companyName', $employer->company);
         $statement->bindParam(':street', $employer->street);
-        $statement->bindParam(':postCode', $employer->postCode);
+        $statement->bindParam(':postcode', $employer->postcode);
         $statement->bindParam(':city', $employer->city);
         $statement->bindParam(':gender', $employer->gender);
         $statement->bindParam(':degree', $employer->degree);

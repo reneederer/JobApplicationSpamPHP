@@ -35,6 +35,11 @@
     }
 
     unlink('/var/www/html/jobApplicationSpam/jobApplication1.sql');
+    copy('/var/www/html/defaultFiles/bewerbung_neu.odt', '/var/www/userFiles/bewerbung_neu.odt');
+    copy('/var/www/html/defaultFiles/ihk_zeugnis_small.pdf', '/var/www/userFiles/ihk_zeugnis_small.pdf');
+    copy('/var/www/html/defaultFiles/labenwolf_zeugnis_small.pdf', '/var/www/userFiles/labenwolf_zeugnis_small.pdf');
+    copy('/var/www/html/defaultFiles/kmk_zeugnis_small.pdf', '/var/www/userFiles/kmk_zeugnis_small.pdf');
+    copy('/var/www/html/defaultFiles/segitz_zeugnis_small.pdf', '/var/www/userFiles/segitz_zeugnis_small.pdf');
 
 
 

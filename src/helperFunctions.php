@@ -4,13 +4,10 @@
         $fileName = "";
         do
         {
-            $fileName = $baseDir . uniqid() . '.' . $ext;
+            $fileName = $baseDir . uniqid() . ($ext === '' ? '' : ".$ext");
         } while(file_exists($fileName));
         return $fileName;
     }
-
-
-
 
 
 ?>
