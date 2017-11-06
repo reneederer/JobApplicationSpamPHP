@@ -17,9 +17,9 @@
         return $rows;
     }
 
-    function getJobApplicationTemplateODTFile($dbConn, $userId, $templateId)
+    function getJobApplicationTemplateODTPath($dbConn, $userId, $templateId)
     {
-        $statement = $dbConn->prepare('select odtFile from jobApplicationTemplate where userId=:userId and id=:templateId');
+        $statement = $dbConn->prepare('select odtPath from jobApplicationTemplate where userId=:userId and id=:templateId');
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
@@ -40,14 +40,14 @@
         }
         else
         {
-            return $rows[0]['odtFile'];
+            return $rows[0]['odtPath'];
         }
     }
 
 
     function getJobApplicationTemplate($dbConn, $userId, $templateId)
     {
-        $statement = $dbConn->prepare('select userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile from jobApplicationTemplate where userId=:userId and id=:templateId limit 1');
+        $statement = $dbConn->prepare('select userId, templateName, userAppliesAs, emailSubject, emailBody, odtPath from jobApplicationTemplate where userId=:userId and id=:templateId limit 1');
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
@@ -71,23 +71,35 @@
         }
     }
 
-    function addJobApplicationTemplate($dbConn, $userId, $templateName, $userAppliesAs, $emailSubject, $emailBody, $odtFile)
+    function addJobApplicationTemplate($dbConn, $userId, $templateName, $userAppliesAs, $emailSubject, $emailBody, $odtPath, $appendixPaths)
     {
         //TODO existing template with the same name should not be overwritten
-        $statement = $dbConn->prepare('insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtFile)
-            values(:userId, :templateName, :userAppliesAs, :emailSubject, :emailBody, :odtFile)');
+        $statement = $dbConn->prepare('insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtPath)
+            values(:userId, :templateName, :userAppliesAs, :emailSubject, :emailBody, :odtPath)');
         $statement->bindParam(':userId', $userId);
         $statement->bindParam(':templateName', $templateName);
         $statement->bindParam(':userAppliesAs', $userAppliesAs);
         $statement->bindParam(':emailSubject', $emailSubject);
         $statement->bindParam(':emailBody', $emailBody);
-        $statement->bindParam(':odtFile', $odtFile);
+        $statement->bindParam(':odtPath', $odtPath);
         $result = $statement->execute();
         if($result === false)
         {
             throw new \Exception('Query failed to add job application template.');
         }
+        foreach($appendixPaths as $currentAppendixPath)
+        {
+            $statement = $dbConn->prepare('insert into jobApplicationPdfAppendix (jobApplicationTemplateId, pdfPath) values(last_insert_id(), :pdfPath)');
+            $statement->bindParam(':pdfPath', $currentAppendixPath);
+            $result = $statement->execute();
+            if($result === false)
+            {
+                throw new \Exception('Query failed to insert PDF appendix.');
+            }
+        }
+
     }
+
 
     function getTemplateIdByName($dbConn, $userId, $templateName)
     {
@@ -134,7 +146,7 @@
 
     function getPdfAppendices($dbConn, $templateId)
     {
-        $statement = $dbConn->prepare('select pdfFile from jobApplicationPdfAppendix where jobApplicationTemplateId=:templateId');
+        $statement = $dbConn->prepare('select pdfPath from jobApplicationPdfAppendix where jobApplicationTemplateId=:templateId');
         $statement->bindParam(':templateId', $templateId);
         $result = $statement->execute();
         if($result === false)
@@ -150,18 +162,6 @@
         return $rows;
     }
 
-    function addPdfAppendix($dbConn, $name, $templateId, $pdfFileName)
-    {
-        $statement = $dbConn->prepare('insert into jobApplicationPdfAppendix (name, jobApplicationTemplateId, pdfFile) values(:name, :templateId, :pdfFileName)');
-        $statement->bindParam(':name', $name);
-        $statement->bindParam(':templateId', $templateId);
-        $statement->bindParam(':pdfFileName', $pdfFileName);
-        $result = $statement->execute();
-        if($result === false)
-        {
-            throw new \Exception('Query failed to insert PDF appendix.');
-        }
-    }
 
     function addUser($dbConn, $email, $password)
     {
@@ -182,14 +182,14 @@
         }
     }
 
-    function getIdAndPasswordByEmail($dbConn, $email)
+    function getUserIdAndPasswordByEmail($dbConn, $email)
     {
         $statement = $dbConn->prepare('select id, password from user where email=:email limit 1');
         $statement->bindParam(':email', $email);
         $result = $statement->execute();
         if($result === false)
         {
-            throw new \Exception('Query failed to get id and password.');
+            throw new \Exception('Query failed to get userId and password.');
         }
         $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
         if($result === false)
@@ -203,7 +203,7 @@
         }
         else
         {
-            return Array('id' => $rows[0]['id'], 'password' => $rows[0]['password']);
+            return Array('userId' => $rows[0]['id'], 'password' => $rows[0]['password']);
         }
     }
 
@@ -227,32 +227,6 @@
         }
     }
 
-
-    function identifyUser($dbConn, $email)
-    {
-        $statement = $dbConn->prepare('select id from user where email=:email limit 1');
-        $statement->bindParam(':email', $email);
-        $result = $statement->execute();
-        if($result === false)
-        {
-            throw new \Exception('Query failed to identify user.');
-        }
-        $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
-        if($result === false)
-        {
-            throw new \Exception('Failed to setFetchMode().');
-        }
-
-        $rows = $statement->fetchAll();
-        if(count($rows) === 0)
-        {
-            throw new \Exception('Email or password wrong.');
-        }
-        else
-        {
-            return $rows[0]['id'];
-        }
-    }
 
     function getUserDetails($dbConn, $userId)
     {

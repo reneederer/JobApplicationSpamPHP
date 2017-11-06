@@ -28,11 +28,12 @@
     class TemplateData
     {
         public $templateName;
+        public $userAppliesAs;
         public $emailSubject;
         public $emailBody;
-        public $odtFileName;
-        public $pdfFileNames;
-        function __construct($templateName, $emailSubject, $emailBody, $odtFile, $pdfFiles)
+        public $odtFile;
+        public $pdfFiles;
+        function __construct($templateName, $userAppliesAs, $emailSubject, $emailBody, $odtFile, $pdfFiles)
         {
             $odtMimeType = mime_content_type($odtFile['tmp_name']);
             if($odtMimeType !== 'application/vnd.oasis.opendocument.text' && $odtMimeType !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
@@ -43,8 +44,10 @@
             {
                 throw new \Exception('Template file should be smaller than 1 MB.');
             }
+            $this->pdfFilePaths = [];
             for($i = 0; $i < min(count($pdfFiles['tmp_name']), 10); ++$i)
             {
+                var_dump($pdfFiles['tmp_name'][$i]);
                 if(mime_content_type($pdfFiles['tmp_name'][$i]) !== 'application/pdf')
                 {
                     throw new \Exception('PDF appendix should have type pdf.');
@@ -53,12 +56,12 @@
                 {
                     throw new \Exception('PDF file ' . ($i + 1) . ' should be smaller than 1 MB.');
                 }
-                $this->pdfFileNames[] = $pdfFiles['name'][$i];
             }
             $this->templateName = $templateName;
             $this->emailSubject = $emailSubject;
             $this->emailBody = $emailBody;
-            $this->odtFileName = $odtFile['name'];
+            $this->odtFile = $odtFile;
+            $this->pdfFiles = $pdfFiles;
         }
     };
     function validateTemplateData($templateData)
@@ -78,22 +81,6 @@
         {
             $taskResult->isValid = false;
             $taskResult->errors[] = 'Der Email-Body darf nicht leer sein.';
-        }
-        if(!((strlen(trim($templateData->odtFileName)) >= 5) && substr_compare(strtolower($templateData->odtFileName), '.odt', -4) === 0))
-        {
-            $taskResult->isValid = false;
-            $taskResult->errors[] = 'Die ODT-Datei darf nicht leer sein und muss auf ".odt" enden.';
-        }
-        for($i = 0; $i < count($templateData->pdfFileNames); ++$i)
-        {
-            if($templateData->pdfFileNames[$i] != '')
-            {
-                if(!(strlen(trim($templateData->pdfFileNames[$i])) >= 5 && substr_compare(strtolower($templateData->pdfFileNames[$i]), '.pdf', -4 ) === 0))
-                {
-                    $taskResult->isValid = false;
-                    $taskResult->errors[] = 'PDF-Datei Nr. ' . ($i + 1) . ' ist kein PDF Format.';
-                }
-            }
         }
         return $taskResult;
     }

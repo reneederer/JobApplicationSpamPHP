@@ -29,31 +29,13 @@
 
 
     if(isset($_POST['sbmLoginForm']))
-    {
-        $userIdAndPassword = getIdAndPasswordByEmail($dbConn, $_POST['txtUserEmail']);
-        if(!empty($userIdAndPassword) && password_verify($_POST['txtPassword'], $userIdAndPassword['password']))
-        {
-            $_SESSION['user']['id'] = identifyUser($dbConn, $_POST['txtUserEmail']);
-        }
-    }
+        ucLogin($dbConn, $_POST['txtLoginEmail'], $_POST['txtLoginPassword']);
     else if(isset($_POST['sbmLogout']))
-    {
-        logout();
-    }
+        ucLogout();
     else if(isset($_POST['sbmRegisterForm']))
-    {
-        if(filter_var($_POST['txtUserEmail'], FILTER_VALIDATE_EMAIL))
-        {
-            addUser($dbConn, $_POST['txtUserEmail'], password_hash($_POST['txtPassword'], PASSWORD_DEFAULT));
-        }
-        else
-        {
-            $currentMessage = 'Email doesn\'t look valid.';
-        }
-    }
+        ucRegisterNewUser($dbConn, $_POST['txtRegisterEmail'], $_POST['txtRegisterPassword'], $_POST['txtRegisterPassworRepeated']);
     else if(isset($_POST['sbmSetUserDetails']))
-    {
-        ucSetUserDetails($dbConn, $_SESSION['user']['id'], 
+        ucSetUserDetails($dbConn, $_SESSION['userId'], 
                          $_POST['rbUserGender'],
                          $_POST['txtUserDegree'],
                          $_POST['txtUserFirstName'],
@@ -66,10 +48,8 @@
                          $_POST['txtUserBirthday'],
                          $_POST['txtUserBirthplace'],
                          $_POST['txtUserMaritalStatus']);
-    }
     else if(isset($_POST['sbmAddEmployer']))
-    {
-        ucAddEmployer($dbConn, $_SESSION['user']['id'],
+        ucAddEmployer($dbConn, $_SESSION['userId'],
                      $_POST['txtCompany'],
                      $_POST['txtCompanyStreet'],
                      $_POST['txtCompanyPostcode'],
@@ -81,64 +61,33 @@
                      $_POST['txtBossEmail'],
                      $_POST['txtBossMobilePhone'],
                      $_POST['txtBossPhone']);
-    }
     else if(isset($_POST['sbmDownloadPDF']))
     {
         //TODO FIX or remove this!
         //$dict = readEmployerFromWebsite('http://localhost/jobApplicationSpam/jobboerseArbeitsagentur.html');
         //$directoryAndFileName = getPDF($directory, $odtFile, $dict);
-        //addToDownloads($dbConn, $directoryAndFileName[0], $_SESSION['user']['id']);
+        //addToDownloads($dbConn, $directoryAndFileName[0], $_SESSION['userId']);
         //header('Content-type:application/pdf');
         //header("Content-Disposition:attachment;filename=jobApplication.pdf");
         //echo file_get_contents($directoryAndFileName[0] .  $directoryAndFileName[1]);
     }
     else if(isset($_POST['sbmUploadJobApplicationTemplate']))
     {
-        try
-        {
-            $templateDataResult = validateTemplateData(
-                new TemplateData($_POST['txtJobApplicationTemplateName'],
-                                 $_POST['txtUserEmailSubject'], $_POST['txtUserEmailBody'],
-                                 $_FILES['fileODT'],
-                                 $_FILES['fileAppendices']));
-            if($templateDataResult->isValid){
-                $baseDir = '/var/www/userFiles/';
-                $odtFileName = getNonExistingFileName($baseDir, 'odt');
-                move_uploaded_file($_FILES['fileODT']['tmp_name'], $odtFileName);
-                addJobApplicationTemplate( $dbConn
-                                         , $_SESSION['user']['id']
-                                         , $_POST['txtJobApplicationTemplateName']
-                                         , $_POST['txtUserAppliesAs']
-                                         , $_POST['txtUserEmailSubject']
-                                         , $_POST['txtUserEmailBody']
-                                         , $odtFileName);
-                $templateId = getTemplateIdByName($dbConn, $_SESSION['user']['id'], $_POST['txtJobApplicationTemplateName']);
-                for($i = 0; $i < count($_FILES['fileAppendices']['tmp_name']); ++$i)
-                {
-                    if($_FILES['fileAppendices']['tmp_name'][$i] !== '')
-                    {
-                        $pdfAppendixFileName = getNonExistingFileName($baseDir, 'pdf');
-                        move_uploaded_file($_FILES['fileAppendices']['tmp_name'][$i], $pdfAppendixFileName);
-                        addPdfAppendix( $dbConn
-                                      , $_POST['txtJobApplicationTemplateName']
-                                      , $templateId
-                                      , $pdfAppendixFileName);
-                    }
-                }
-            }
-            $currentMessage .= join('<br>', $templateDataResult->errors);
-        }
-        catch(\Exception $e)
-        {
-            $currentMessage .= $e->errorMessage;
-        }
+        ucUploadJobApplicationTemplate($dbConn,
+                                       $_SESSION['userId'],
+                                       $_POST['txtJobApplicationTemplateName'],
+                                       $_POST['txtUserAppliesAs'],
+                                       $_POST['txtTemplateEmailSubject'],
+                                       $_POST['txtTemplateEmailBody'],
+                                       $_FILES['fileODT'],
+                                       $_FILES['fileAppendices']);
     }
     else if(isset($_POST['sbmApplyNowForReal']) || isset($_POST['sbmApplyNowForTest']))
     {
-        $employerIndex = getEmployerIndex($dbConn, $_SESSION['user']['id'], $_POST['hidEmployerIndex']);
-        $employerValuesDict = getEmployer($dbConn, $_SESSION['user']['id'], $employerIndex);
-        $userDetails = getUserDetails($dbConn, $_SESSION['user']['id']);
-        $userEmail = getEmailByUserId($dbConn, $_SESSION['user']['id']);
+        $employerIndex = getEmployerIndex($dbConn, $_SESSION['userId'], $_POST['hidEmployerIndex']);
+        $employerValuesDict = getEmployer($dbConn, $_SESSION['userId'], $employerIndex);
+        $userDetails = getUserDetails($dbConn, $_SESSION['userId']);
+        $userEmail = getEmailByUserId($dbConn, $_SESSION['userId']);
         if(is_null($userDetails))
         {
             $currentMessage = 'Userdetails konnten nicht gefunden werden.';
@@ -165,11 +114,11 @@
                 , "\$datumHeute" => date('d.m.Y')];
             $dict["\$chefAnrede"] = $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herr' : 'Frau';
 
-            $jobApplicationTemplateId = getTemplateIdByIndex($dbConn, $_SESSION['user']['id'], $_POST['hidTemplateIndex']);
-            $jobApplicationTemplate = getJobApplicationTemplate($dbConn, $_SESSION['user']['id'], $jobApplicationTemplateId);
+            $jobApplicationTemplateId = getTemplateIdByIndex($dbConn, $_SESSION['userId'], $_POST['hidTemplateIndex']);
+            $jobApplicationTemplate = getJobApplicationTemplate($dbConn, $_SESSION['userId'], $jobApplicationTemplateId);
             $pdfDirectoryAndFile = getPDF($jobApplicationTemplate['odtFile'], $dict, '/var/www/userFiles/tmp/');
-            $templateId = getTemplateIdByIndex($dbConn, $_SESSION['user']['id'], $_POST['hidTemplateIndex']);
-            addJobApplication($dbConn, $_SESSION['user']['id'], $employerIndex, $templateId);
+            $templateId = getTemplateIdByIndex($dbConn, $_SESSION['userId'], $_POST['hidTemplateIndex']);
+            addJobApplication($dbConn, $_SESSION['userId'], $employerIndex, $templateId);
 
 
             $pdfAppendices = getPdfAppendices($dbConn, $templateId);
@@ -200,7 +149,7 @@
     }
     else if(isset($_POST['sbmDownloadSentApplications']))
     {
-        $data = getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0);
+        $data = getJobApplications($dbConn, $_SESSION['userId'], 0, 0);
         $pdf = new FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial','B', 15);
@@ -223,11 +172,6 @@
         $pdf->Output();
     }
 
-
-    function logout()
-    {
-        $_SESSION['user'] = Array();
-    }
 
     function sendMail($from, $fromName, $subject, $body, $pdfAttachment, $to, $attachments)
     {
@@ -419,19 +363,19 @@
               <button type="button" class="btn btn-primary btn-xs" data-toggle="offcanvas">&gt;</button>
           </p>
             <?php
-                if(isset($_SESSION['user']) && isset($_SESSION['user']['id']) && $_SESSION['user']['id'] >= 1)
+                if(isset($_SESSION['userId']) && $_SESSION['userId'] >= 1)
                 {
             ?>
                     <div id="loggedInDiv" style="position:absolute;top:0px;float:right;right:0px;">
                         Eingeloggt als <?php
-    $email = getEmailByUserId($dbConn, $_SESSION['user']['id']);
+    $email = getEmailByUserId($dbConn, $_SESSION['userId']);
     echo htmlspecialchars($email); ?>
                         <br />
                         <form action="" method="post"><input type="submit" value="Ausloggen" name="sbmLogout" /></form>
                     </div>
             <?php
                 }
-                else if(!isset($_POST['sbmShowRegisterForm']))
+                else if((!isset($_SESSION['userId']) || $_SESSION['userId'] <= -1) && !isset($_POST['sbmShowRegisterForm']))
                 {
             ?>
                     <div id="loginForm" class="page">
@@ -439,11 +383,11 @@
                             <table>
                                 <tr>
                                     <td>Email:</td>
-                                    <td><input type="text" value="" name="txtUserEmail" /></td>
+                                    <td><input type="text" value="" name="txtLoginEmail" /></td>
                                 </tr>
                                 <tr>
                                     <td>Password:</td>
-                                    <td><input type="password" value="" name="txtPassword" /></td>
+                                    <td><input type="password" value="" name="txtLoginPassword" /></td>
                                 </tr>
                                 <tr>
                                     <td><input type="submit" name="sbmLoginForm" value="Einloggen" /></td>
@@ -460,15 +404,15 @@
                             <table>
                                 <tr>
                                     <td>Email:</td>
-                                    <td><input type="text" value="" name="txtUserEmail" /></td>
+                                    <td><input type="text" value="" name="txtRegisterEmail" /></td>
                                 </tr>
                                 <tr>
                                     <td>Password:</td>
-                                    <td><input type="password" value="" name="txtPassword" /></td>
+                                    <td><input type="password" value="" name="txtRegisterPassword" /></td>
                                 </tr>
                                 <tr>
                                     <td>Password wiederholen:</td>
-                                    <td><input type="password" value="" name="txtPassworRepeated" /></td>
+                                    <td><input type="password" value="" name="txtRegisterPassworRepeated" /></td>
                                 </tr>
                                     <td></td>
                                     <td><input type="submit" name="sbmRegisterForm" value="Registrieren" /></td>
@@ -505,11 +449,11 @@
                       <input type="text" class="form-control" id="txtUserAppliesAs" name="txtUserAppliesAs" value="<?php echo htmlspecialchars($_POST['txtUserAppliesAs'] ?? ''); ?>" />
                   </div>
                   <div class="form-group">
-                      <label for="txtUserEmailSubject">Email-Betreff</label>
-                      <input type="text" class="form-control" id="txtUserEmailSubject" name="txtUserEmailSubject" value="<?php echo htmlspecialchars($_POST['txtUserEmailSubject'] ?? ''); ?>" />
+                      <label for="txtTemplateEmailSubject">Email-Betreff</label>
+                      <input type="text" class="form-control" id="txtTemplateEmailSubject" name="txtTemplateEmailSubject" value="<?php echo htmlspecialchars($_POST['txtTemplateEmailSubject'] ?? ''); ?>" />
                   </div>
-                      <label for="txtUserEmailBody">Email-Body</label>
-                      <textarea name="txtUserEmailBody" class="form-control" id="txtUserEmailBody" cols="100" rows="15"><?php echo htmlspecialchars($_POST['txtUserEmailBody'] ?? ''); ?></textarea>
+                      <label for="txtTemplateEmailBody">Email-Body</label>
+                      <textarea name="txtTemplateEmailBody" class="form-control" id="txtTemplateEmailBody" cols="100" rows="15"><?php echo htmlspecialchars($_POST['txtTemplateEmailBody'] ?? ''); ?></textarea>
                   <div class="form-group">
                       <label for="fileODT">Vorlage (*.odt oder *.docx)</label>
                       <input type="file" name="fileODT" id="fileODT" accept=".odt,.docx" />
@@ -660,9 +604,9 @@
                     <table id="selectEmployerTable" class="table table-hover table-border table-sm">
                     <?php
                         $employers = [];
-                        if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+                        if(isset($_SESSION['user']) && isset($_SESSION['userId']))
                         {
-                            $employers = getEmployers($dbConn, $_SESSION['user']['id']);
+                            $employers = getEmployers($dbConn, $_SESSION['userId']);
                         }
                         if(count($employers) > 0)
                         {
@@ -689,9 +633,9 @@
                     <table id="selectTemplateTable" class="selectableTable">
                     <?php
                         $jobApplicationTemplates = [];
-                        if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+                        if(isset($_SESSION['user']) && isset($_SESSION['userId']))
                         {
-                            $jobApplicationTemplates = getJobApplicationTemplates($dbConn, $_SESSION['user']['id']);
+                            $jobApplicationTemplates = getJobApplicationTemplates($dbConn, $_SESSION['userId']);
                         }
                         if(count($jobApplicationTemplates) > 0)
                         {
@@ -737,9 +681,9 @@
                     <table class="table table-hover table-border">
                     <?php
                         $sentApplications = [];
-                        if(isset($_SESSION['user']) && isset($_SESSION['user']['id']))
+                        if(isset($_SESSION['user']) && isset($_SESSION['userId']))
                         {
-                            $sentApplications = getJobApplications($dbConn, $_SESSION['user']['id'], 0, 0); //TODO Fix parameters
+                            $sentApplications = getJobApplications($dbConn, $_SESSION['userId'], 0, 0); //TODO Fix parameters
                         }
                         if(count($sentApplications) > 0)
                         {
