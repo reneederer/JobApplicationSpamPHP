@@ -5,10 +5,10 @@ require_once('dbFunctions.php');
 
 function ucLogin($dbConn, $email, $password)
 {
-    $userIdAndPassword = getUserIdAndPasswordByEmail($dbConn, $email);
-    if(!empty($userIdAndPassword) && password_verify($password, $userIdAndPassword['password']))
+    $userData = getUserDataByEmail($dbConn, $email);
+    if(count($userData) > 0 && is_null($userData['confirmationString']) && empty($userData) === false && password_verify($password, $userData['password']))
     {
-        $_SESSION['userId'] = $userIdAndPassword['userId'];
+        $_SESSION['userId'] = $userData['userId'];
     }
     else
     {
@@ -22,88 +22,82 @@ function ucLogout()
     $_SESSION['userId'] = -1;
 }
 
-function ucRegisterNewUser($dbConn, $email, $password)
+function ucRegisterNewUser($dbConn, $email, $password, $passwordRepeated)
 {
     //TODO send confirmation email
+    if($password !== $passwordRepeated)
+    {
+        return new TaskResult(false, ['Passworte stimmen nicht überein'], []);
+    }
+    $taskResult = new TaskResult(true, [], []);
     if(filter_var($email, FILTER_VALIDATE_EMAIL))
     {
-        addUser($dbConn, $email, password_hash($password, PASSWORD_DEFAULT));
+        if(isEmailRegistered($dbConn, $email))
+        {
+            return new TaskResult(false, ['Diese Email-Adresse ist schon registriert.'], []);
+        }
+        $confirmationString = bin2hex(random_bytes(16));
+        $taskResult = sendMail('rene.ederer.nbg@gmail.com'
+            , 'bewerbungsspam.de'
+            , 'Bitte bestätige deine Anmeldung bei www.bewerbungsspam.de'
+            , "Hallo,\nbitte klicke diesen Link: http://localhost/jobApplicationSpam/src/index.php?email=$email&confirmationString=$confirmationString\nViele Grüße\nDein Team von www.bewerbungsspam.de"
+            , $email //TODO $employerValuesDict['$firmaEmail']
+            , null);
+        addUser($dbConn, $email, password_hash($password, PASSWORD_DEFAULT), $confirmationString);
     }
     else
     {
-        $currentMessage = 'Email doesn\'t look valid.';
+        $taskResult->setInvalidWithErrorMsg('Your email doesn\'t look valid.');
     }
 }
 
-function ucUploadJobApplicationTemplate($dbConn, $userId, $templateName, $userAppliesAs, $templateEmailSubject, $templateEmailBody, $fileODT, $fileAppendices)
+function ucConfirmEmailAddress($dbConn, $email, $userConfirmationString)
 {
+    $realConfirmationString = getConfirmationString($dbConn, $email);
+    if($realConfirmationString === $userConfirmationString)
+    {
+        setEmailConfirmed($dbConn, $email);
+    }
+}
+
+function ucUploadJobApplicationTemplate($dbConn, $userId, $template, $odt, $pdfs)
+{
+    $templateValidationResult = new TaskResult(true, [], []);
     try
     {
-        $templateDataResult = validateTemplateData(
-            new TemplateData($templateName,
-                             $userAppliesAs,
-                             $templateEmailSubject,
-                             $templateEmailBody,
-                             $fileODT,
-                             $fileAppendices));
-        if($templateDataResult->isValid){
-            $baseDir = '/var/www/userFiles/';
-            $odtPath = getNonExistingFileName($baseDir, 'odt');
-            move_uploaded_file($fileODT['tmp_name'], $odtPath);
-
-            $appendixPaths = [];
-            for($i = 0; $i < count($fileAppendices['tmp_name']); ++$i)
-            {
-                if($fileAppendices['tmp_name'][$i] !== '')
-                {
-                    $pdfAppendixPath = getNonExistingFileName($baseDir, 'pdf');
-                    move_uploaded_file($fileAppendices['tmp_name'][$i], $pdfAppendixPath);
-                    $appendixPaths[] = $pdfAppendixPath;
-                }
-            }
-            addJobApplicationTemplate( $dbConn
-                                     , $userId
-                                     , $templateName
-                                     , $userAppliesAs
-                                     , $templateEmailSubject
-                                     , $templateEmailBody
-                                     , $odtPath
-                                     , $appendixPaths);
+        $templateValidationResult = validateTemplate($template, $odt, $pdfs);
+        if(!$templateValidationResult->isValid)
+        {
+            return $templateValidationResult;
         }
-        //$currentMessage .= join('<br>', $templateDataResult->errors);
+        $baseDir = '/var/www/userFiles/';
+        $odtPath = getNonExistingFileName($baseDir, 'odt');
+        move_uploaded_file($odt['tmp_name'], $odtPath);
+
+        $pdfPaths = [];
+        for($i = 0; $i < count($pdfs['tmp_name']); ++$i)
+        {
+            if($pdfs['tmp_name'][$i] !== '')
+            {
+                $currentPdfPath = getNonExistingFileName($baseDir, 'pdf');
+                move_uploaded_file($pdfs['tmp_name'][$i], $currentPdfPath);
+                $pdfPaths[] = $currentPdfPath;
+            }
+        }
+        addJobApplicationTemplate($dbConn , $userId , $template + [ 'odtPath' => $odtPath , 'pdfPaths' => $pdfPaths ]);
+        return $templateValidationResult;
+        //$currentMessage .= join('<br>', $templateValidationResult->errors);
     }
     catch(\Exception $e)
     {
+
         die($e->getMessage());
         $currentMessage .= $e->getMessage();
     }
 }
 
-function ucAddEmployer($dbConn, $userId,
-                     $company,
-                     $companyStreet,
-                     $companyPostcode,
-                     $companyCity,
-                     $bossGender,
-                     $bossDegree,
-                     $bossFirstName,
-                     $bossLastName,
-                     $bossEmail,
-                     $bossMobilePhone,
-                     $bossPhone)
+function ucAddEmployer($dbConn, $userId, $employer)
 {
-    $employer = new Employer(
-                 $company,
-                 $companyStreet,
-                 $companyPostcode,
-                 $companyCity,
-                 $bossGender,
-                 $bossDegree,
-                 $bossFirstName,
-                 $bossLastName,
-                 $bossEmail,
-                 $bossMobilePhone,
-                 $bossPhone);
     $validateResult = validateEmployer($employer);
     if($validateResult->isValid)
     {
@@ -116,106 +110,85 @@ function ucAddEmployer($dbConn, $userId,
 }
 
 
-function ucSetUserDetails($dbConn, $userId,
-                          $userGender,
-                          $userDegree,
-                          $userFirstName,
-                          $userLastName,
-                          $userStreet,
-                          $userPostcode,
-                          $userCity,
-                          $userMobilePhone,
-                          $userPhone,
-                          $userBirthday,
-                          $userBirthplace,
-                          $userMaritalStatus)
+function ucSetUserDetails($dbConn, $userId, $userDetails)
 {
-    $userDetails = new UserDetails($userGender,
-                                   $userDegree,
-                                   $userFirstName,
-                                   $userLastName,
-                                   $userStreet,
-                                   $userPostcode,
-                                   $userCity,
-                                   $userMobilePhone,
-                                   $userPhone,
-                                   $userBirthday,
-                                   $userBirthplace,
-                                   $userMaritalStatus);
-    $checkUserDetailsResult = validateUserDetails($userDetails);
-    if($checkUserDetailsResult->isValid)
+    $validateUserDetailsResult = validateUserDetails($userDetails);
+    if($validateUserDetailsResult->isValid)
     {
         setUserDetails($dbConn, $userId, $userDetails);
     }
     else
     {
-        $currentMessage .= join("<br>", $checkUserDetailsResult->errors);
+        $currentMessage .= join("<br>", $validateUserDetailsResult->errors);
     }
 }
 
 function ucApplyNow($dbConn, $userId, $employerId, $templateId, $mailToUserOnly)
 {
 
-        $employerValuesDict = getEmployer($dbConn, $userId, $employerId);
-        $userDetails = getUserDetails($dbConn, $userId);
-        $userEmail = getEmailByUserId($dbConn, $userId);
-        if(is_null($userDetails))
+    if($mailToUserOnly === false)
+    {
+        throw new \Exception('mail for real not implemented!');
+    }
+    $employerValuesDict = getEmployer($dbConn, $userId, $employerId);
+    $userDetails = getUserDetails($dbConn, $userId);
+    $userEmail = getEmailByUserId($dbConn, $userId);
+    if(is_null($userDetails))
+    {
+        $currentMessage = 'Userdetails konnten nicht gefunden werden.';
+        return;
+    }
+    else
+    {
+        $userDetailsDict =
+            [ '$meinTitel' => $userDetails['degree']
+            , '$meineAnrede' => $userDetails['gender']
+            , '$meinVorname' => $userDetails['firstName']
+            , '$meinNachname' => $userDetails['lastName']
+            , '$meineStrasse' => $userDetails['street']
+            , '$meinePlz' => $userDetails['postcode']
+            , '$meineStadt' => $userDetails['city']
+            , '$meineEmail' => $userEmail
+            , '$meineTelefonnr' => $userDetails['phone']
+            , '$meineMobilnr' => $userDetails['mobilePhone']
+            , '$meinGeburtsdatum' => $userDetails['birthday']
+            , '$meinGeburtsort' => $userDetails['birthplace']
+            , '$meinFamilienstand' => $userDetails['maritalStatus'] ];
+        $dict = $employerValuesDict + $userDetailsDict +
+            [ "\$geehrter" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'geehrter' : 'geehrte'
+            , "\$chefAnredeBriefkopf" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herrn' : 'Frau'
+            , "\$datumHeute" => date('d.m.Y')];
+        $dict["\$chefAnrede"] = $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herr' : 'Frau';
+
+        $jobApplicationTemplate = getJobApplicationTemplate($dbConn, $userId, $templateId);
+        $pdfDirectoryAndFile = getPDF($jobApplicationTemplate['odtPath'], $dict, '/var/www/userFiles/tmp/', str_replace(' ', '_', mb_strtolower($userDetails['lastName'] . '_bewerbung')));
+        addJobApplication($dbConn, $userId, $employerId, $templateId);
+
+
+        $pdfAppendices = getPdfAppendices($dbConn, $templateId);
+        $pdfUniteCommand = 'pdfunite ' . ($pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1]);
+        foreach($pdfAppendices as $currentPdfAppendix)
         {
-            $currentMessage = 'Userdetails konnten nicht gefunden werden.';
-            return;
+            $pdfUniteCommand .= ' ' . $currentPdfAppendix['pdfFile'];
+        }
+        $pdfFileName = $pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1];
+        exec($pdfUniteCommand . ' ' . $pdfFileName . ' 2>1', $output);
+
+        $taskResult = sendMail( $userEmail
+            , $userDetails['firstName'] . ' ' . $userDetails['lastName']
+            , replaceAllInString($jobApplicationTemplate['emailSubject'], $dict)
+            , replaceAllInString($jobApplicationTemplate['emailBody'], $dict)
+            , $mailToUserOnly ? $userEmail : $userEmail //TODO $employerValuesDict['$firmaEmail']
+            , $pdfFileName);
+        if($taskResult->isValid)
+        {
+            //$currentMessage .= 'Email wurde versandt.';
         }
         else
         {
-            $userDetailsDict =
-                [ '$meinTitel' => $userDetails->degree
-                , '$meineAnrede' => $userDetails->gender
-                , '$meinVorname' => $userDetails->firstName
-                , '$meinNachname' => $userDetails->lastName
-                , '$meineStrasse' => $userDetails->street
-                , '$meinePlz' => $userDetails->postcode
-                , '$meineStadt' => $userDetails->city
-                , '$meineEmail' => $userEmail
-                , '$meineTelefonnr' => $userDetails->phone
-                , '$meineMobilnr' => $userDetails->mobilePhone
-                , '$meinGeburtsdatum' => $userDetails->birthday
-                , '$meinGeburtsort' => $userDetails->birthplace
-                , '$meinFamilienstand' => $userDetails->maritalStatus]; 
-            $dict = $employerValuesDict + $userDetailsDict +
-                [ "\$geehrter" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'geehrter' : 'geehrte'
-                , "\$chefAnredeBriefkopf" => $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herrn' : 'Frau'
-                , "\$datumHeute" => date('d.m.Y')];
-            $dict["\$chefAnrede"] = $employerValuesDict["\$chefAnrede"] === 'm' ? 'Herr' : 'Frau';
-
-            $jobApplicationTemplate = getJobApplicationTemplate($dbConn, $userId, $templateId);
-            $pdfDirectoryAndFile = getPDF($jobApplicationTemplate['odtPath'], $dict, '/var/www/userFiles/tmp/', str_replace(' ', '_', mb_strtolower($userDetails->lastName . '_bewerbung')));
-            addJobApplication($dbConn, $userId, $employerId, $templateId);
-
-
-            $pdfAppendices = getPdfAppendices($dbConn, $templateId);
-            $pdfUniteCommand = 'pdfunite ' . ($pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1]);
-            foreach($pdfAppendices as $currentPdfAppendix)
-            {
-                $pdfUniteCommand .= ' ' . $currentPdfAppendix['pdfFile'];
-            }
-            $pdfFileName = $pdfDirectoryAndFile[0] . $pdfDirectoryAndFile[1];
-            exec($pdfUniteCommand . ' ' . $pdfFileName . ' 2>1', $output);
-
-            $taskResult = sendMail( $userEmail
-                , $userDetails->firstName . ' ' . $userDetails->lastName
-                , replaceAllInString($jobApplicationTemplate['emailSubject'], $dict)
-                , replaceAllInString($jobApplicationTemplate['emailBody'], $dict)
-                , $pdfFileName
-                , $mailToUserOnly ? $userEmail : $userEmail //$employerValuesDict['$firmaEmail']
-                , [$pdfFileName]);
-            if($taskResult->isValid)
-            {
-                $currentMessage .= 'Email wurde versandt.';
-            }
-            else
-            {
-                $currentMessage .= join('<br>', $taskResult->errors);
-            }
+            //$currentMessage .= join('<br>', $taskResult->errors);
         }
+    }
 }
 
 

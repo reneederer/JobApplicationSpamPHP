@@ -16,7 +16,7 @@
         return $fileName;
     }
 
-    function sendMail($from, $fromName, $subject, $body, $pdfAttachment, $to, $attachments)
+    function sendMail($from, $fromName, $subject, $body, $to, $pdfAttachment)
     {
         try
         {
@@ -40,7 +40,7 @@
             $email->Body = $body;
             $email->AddBCC($from);
             $email->AddAddress($to);
-            $email->AddAttachment($pdfAttachment, $pdfAttachment);
+            if(!is_null($pdfAttachment)) { $email->AddAttachment($pdfAttachment, $pdfAttachment); }
             $email->Send();
         }
         catch(phpmailerException $e)

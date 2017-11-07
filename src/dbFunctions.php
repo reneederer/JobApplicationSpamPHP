@@ -71,30 +71,30 @@
         }
     }
 
-    function addJobApplicationTemplate($dbConn, $userId, $templateName, $userAppliesAs, $emailSubject, $emailBody, $odtPath, $appendixPaths)
+    function addJobApplicationTemplate($dbConn, $userId, $templateData)
     {
         //TODO existing template with the same name should not be overwritten
         $statement = $dbConn->prepare('insert into jobApplicationTemplate(userId, templateName, userAppliesAs, emailSubject, emailBody, odtPath)
             values(:userId, :templateName, :userAppliesAs, :emailSubject, :emailBody, :odtPath)');
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':templateName', $templateName);
-        $statement->bindParam(':userAppliesAs', $userAppliesAs);
-        $statement->bindParam(':emailSubject', $emailSubject);
-        $statement->bindParam(':emailBody', $emailBody);
-        $statement->bindParam(':odtPath', $odtPath);
+        $statement->bindParam(':templateName', $templateData['name']);
+        $statement->bindParam(':userAppliesAs', $templateData['userAppliesAs']);
+        $statement->bindParam(':emailSubject', $templateData['emailSubject']);
+        $statement->bindParam(':emailBody', $templateData['emailBody']);
+        $statement->bindParam(':odtPath', $templateData['odtPath']);
         $result = $statement->execute();
         if($result === false)
         {
             throw new \Exception('Query failed to add job application template.');
         }
-        foreach($appendixPaths as $currentAppendixPath)
+        foreach($templateData['pdfPaths'] as $currentPdfPath)
         {
-            $statement = $dbConn->prepare('insert into jobApplicationPdfAppendix (jobApplicationTemplateId, pdfPath) values(last_insert_id(), :pdfPath)');
-            $statement->bindParam(':pdfPath', $currentAppendixPath);
+            $statement = $dbConn->prepare('insert into jobApplicationPdfAppendix(jobApplicationTemplateId, pdfPath) values(last_insert_id(), :pdfPath)');
+            $statement->bindParam(':pdfPath', $currentPdfPath);
             $result = $statement->execute();
             if($result === false)
             {
-                throw new \Exception('Query failed to insert PDF appendix.');
+                throw new \Exception('Query failed to insert PDF pdf.');
             }
         }
 
@@ -140,11 +140,12 @@
     }
 
 
-    function addUser($dbConn, $email, $password)
+    function addUser($dbConn, $email, $password, $confirmationString)
     {
-        $statement = $dbConn->prepare('insert into user(name, password) values(:name, :password)');
+        $statement = $dbConn->prepare('insert into user(email, password, confirmationString, created) values(:email, :password, :confirmationString, curdate())');
         $statement->bindParam(':email', $email);
         $statement->bindParam(':password', $password);
+        $statement->bindParam(':confirmationString', $confirmationString);
         $result = $statement->execute();
         if($result === false)
         {
@@ -159,9 +160,45 @@
         }
     }
 
-    function getUserIdAndPasswordByEmail($dbConn, $email)
+    function setEmailConfirmed($dbConn, $email)
     {
-        $statement = $dbConn->prepare('select id, password from user where email=:email limit 1');
+        $statement = $dbConn->prepare('update user set confirmationString = null where email=:email');
+        $statement->bindParam(':email', $email);
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add user.');
+        }
+    }
+
+    function getConfirmationString($dbConn, $email)
+    {
+        $statement = $dbConn->prepare('select confirmationString from user where email=:email');
+        $statement->bindParam(':email', $email);
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to add user.');
+        }
+        $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
+        $rows = $statement->fetchAll();
+        if(count($rows) === 0)
+        {
+            return null;
+        }
+        else
+        {
+            return $rows[0]['confirmationString'];
+        }
+    }
+
+    function getUserDataByEmail($dbConn, $email)
+    {
+        $statement = $dbConn->prepare('select id as userId, password, confirmationString from user where email=:email limit 1');
         $statement->bindParam(':email', $email);
         $result = $statement->execute();
         if($result === false)
@@ -174,14 +211,31 @@
             throw new \Exception('Failed to setFetchMode().');
         }
         $rows = $statement->fetchAll();
-        if(count($rows) === 0)
+        if(count($rows) !== 1)
         {
             return Array();
         }
         else
         {
-            return Array('userId' => $rows[0]['id'], 'password' => $rows[0]['password']);
+            return $rows[0];
         }
+    }
+
+    function isEmailRegistered($dbConn, $email)
+    {
+        $statement = $dbConn->prepare('select id from user where email=:email limit 1');
+        $statement->bindParam(':email', $email);
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to execute: isEmailRegistered (' . $email . '.');
+        }
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
+        $rows = $statement->fetchAll();
+        return count($rows) === 1;
     }
 
     function getEmailByUserId($dbConn, $userId)
@@ -227,19 +281,7 @@
         }
         else
         {
-            return new UserDetails(
-                $rows[0]['gender'],
-                $rows[0]['degree'],
-                $rows[0]['firstName'],
-                $rows[0]['lastName'],
-                $rows[0]['street'],
-                $rows[0]['postcode'],
-                $rows[0]['city'],
-                $rows[0]['phone'],
-                $rows[0]['mobilePhone'],
-                $rows[0]['birthday'],
-                $rows[0]['birthplace'],
-                $rows[0]['maritalStatus']);
+                return $rows[0];
         }
     }
 
@@ -260,18 +302,18 @@
             maritalStatus = :maritalStatus
             where userId = :userId');
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':gender', $userDetails->gender);
-        $statement->bindParam(':degree', $userDetails->degree);
-        $statement->bindParam(':firstName', $userDetails->firstName);
-        $statement->bindParam(':lastName', $userDetails->lastName);
-        $statement->bindParam(':street', $userDetails->street);
-        $statement->bindParam(':postcode', $userDetails->postcode);
-        $statement->bindParam(':city', $userDetails->city);
-        $statement->bindParam(':mobilePhone', $userDetails->mobilePhone);
-        $statement->bindParam(':phone', $userDetails->phone);
-        $statement->bindParam(':birthday', $userDetails->birthday);
-        $statement->bindParam(':birthplace', $userDetails->birthplace);
-        $statement->bindParam(':maritalStatus', $userDetails->maritalStatus);
+        $statement->bindParam(':gender', $userDetails['gender']);
+        $statement->bindParam(':degree', $userDetails['degree']);
+        $statement->bindParam(':firstName', $userDetails['firstName']);
+        $statement->bindParam(':lastName', $userDetails['lastName']);
+        $statement->bindParam(':street', $userDetails['street']);
+        $statement->bindParam(':postcode', $userDetails['postcode']);
+        $statement->bindParam(':city', $userDetails['city']);
+        $statement->bindParam(':mobilePhone', $userDetails['mobilePhone']);
+        $statement->bindParam(':phone', $userDetails['phone']);
+        $statement->bindParam(':birthday', $userDetails['birthday']);
+        $statement->bindParam(':birthplace', $userDetails['birthplace']);
+        $statement->bindParam(':maritalStatus', $userDetails['maritalStatus']);
         $result = $statement->execute();
         if($result === false)
         {
@@ -279,16 +321,57 @@
         }
     }
 
+    function translateStatus($s)
+    {
+        $translations =
+            [ "Waiting for reply after sending job application" => "Wartend nach Bewerbung",
+                "Appointment for job interview" => "Vorstellungstermin",
+                "Job application rejected without an interview" => "Abgelehnt ohne Einladung",
+                "Waiting for reply after job interview" => "Wartend nach Vorstellungsgespräch",
+                "Job application rejected after interview" => "Bewerbung abgelehnt nach Vorstellungsgespräch", 
+                "Job application accepted after interview" => "Bewerbung akzeptiert"];
+        return $translations[$s] ?? $s;
+    }
+
+    function getJobApplicationsForPrint($dbConn, $userId, $fromDate, $toDate)
+    {
+        $statement = $dbConn->prepare(
+            'select    s1.statusChangedOn as "Beworben am"
+                     , jobApplicationStatus.statusChangedOn as "Status vom"
+                     , jobApplicationStatusValue.status
+                     , employer.companyName
+                from jobApplication
+                join employer on jobApplication.employerId = employer.id and jobApplication.userId = :userId
+                join jobApplicationStatus
+                    on jobApplicationStatus.jobApplicationId = jobApplication.id
+                    and statusChangedOn = (select max(statusChangedOn) from jobApplicationStatus where jobApplicationId = jobApplication.id)
+                join jobApplicationStatus s1
+                    on s1.jobApplicationId = jobApplication.id
+                    and s1.statusChangedOn = (select s2.statusChangedOn from jobApplicationStatus s2 where jobApplicationId = jobApplication.id and statusValueId = 1)
+                join jobApplicationStatusValue on jobApplicationStatus.statusValueId = jobApplicationStatusValue.id
+                group by
+                     employer.companyName');
+        $statement->bindParam(':userId', $userId);
+        $result = $statement->execute();
+        if($result === false)
+        {
+            throw new \Exception('Query failed to get job applications.');
+        }
+        $result = $statement->setFetchMode(PDO::FETCH_ASSOC); 
+        if($result === false)
+        {
+            throw new \Exception('Failed to setFetchMode().');
+        }
+        $rows = $statement->fetchAll();
+        return $rows;
+
+    }
+
     function getJobApplications($dbConn, $userId, $fromDate, $toDate)
     {
-        $statement = $dbConn->prepare('select jobApplicationStatus.statusChangedOn, jobApplicationStatus.dueOn, jobApplicationStatus.statusValueId, employer.companyName, employer.degree, employer.firstName
-            , employer.lastName, employer.email, employer.mobilePhone, employer.phone, employer.street, employer.postcode, employer.city
-            from jobApplication
-            join employer on jobApplication.employerId = employer.id and jobApplication.userId = :userId
-            join jobApplicationStatus on jobApplicationStatus.jobApplicationId = jobApplication.id');
         $statement = $dbConn->prepare(
-            'select    jobApplicationStatus.statusChangedOn as aa
-                     , s1.statusChangedOn as "Beworben am"
+            'select    jobApplicationStatus.statusChangedOn
+                     , s1.statusChangedOn
                      , jobApplicationStatus.dueOn
                      , jobApplicationStatus.statusValueId
                      , employer.companyName
@@ -412,17 +495,17 @@
             values (:userId, :companyName, :street, :postcode, :city, :email, :mobilePhone, :phone, :gender, :degree, :firstName, :lastName)');
 
         $statement->bindParam(':userId', $userId);
-        $statement->bindParam(':companyName', $employer->company);
-        $statement->bindParam(':street', $employer->street);
-        $statement->bindParam(':postcode', $employer->postcode);
-        $statement->bindParam(':city', $employer->city);
-        $statement->bindParam(':gender', $employer->gender);
-        $statement->bindParam(':degree', $employer->degree);
-        $statement->bindParam(':firstName', $employer->firstName);
-        $statement->bindParam(':lastName', $employer->lastName);
-        $statement->bindParam(':email', $employer->email);
-        $statement->bindParam(':mobilePhone', $employer->mobilePhone);
-        $statement->bindParam(':phone', $employer->phone);
+        $statement->bindParam(':companyName', $employer['company']);
+        $statement->bindParam(':street', $employer['street']);
+        $statement->bindParam(':postcode', $employer['postcode']);
+        $statement->bindParam(':city', $employer['city']);
+        $statement->bindParam(':gender', $employer['gender']);
+        $statement->bindParam(':degree', $employer['degree']);
+        $statement->bindParam(':firstName', $employer['firstName']);
+        $statement->bindParam(':lastName', $employer['lastName']);
+        $statement->bindParam(':email', $employer['email']);
+        $statement->bindParam(':mobilePhone', $employer['mobilePhone']);
+        $statement->bindParam(':phone', $employer['phone']);
         $result = $statement->execute();
         if($result === false)
         {

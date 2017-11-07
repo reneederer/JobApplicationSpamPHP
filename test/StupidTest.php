@@ -19,7 +19,7 @@ class StupidTest extends TestCase
     {
         if ($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = new PDO('mysql:host=localhost;dbname=jobApplication_mem', 'root', '1234');
+                self::$pdo = new PDO('mysql:host=localhost;dbname=jobApplication_mem', 'spamy', '1234');
             }
             $this->conn = $this->createDefaultDBConnection(self::$pdo, 'heap');
         }
