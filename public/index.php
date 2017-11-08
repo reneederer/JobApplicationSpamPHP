@@ -3,13 +3,13 @@
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 
-    require_once('config.php');
-    require_once('useCase.php');
-    require_once('odtFunctions.php');
-    require_once('websiteFunctions.php');
-    require_once('dbFunctions.php');
-    require_once('helperFunctions.php');
-    require_once('validate.php');
+    require_once('../src/config.php');
+    require_once('../src/useCase.php');
+    require_once('../src/odtFunctions.php');
+    require_once('../src/websiteFunctions.php');
+    require_once('../src/dbFunctions.php');
+    require_once('../src/helperFunctions.php');
+    require_once('../src/validate.php');
 
     session_start();
 
@@ -26,11 +26,15 @@
         ucConfirmEmailAddress($dbConn, $_GET['email'], $_GET['confirmationString']);
     }
     if(isset($_POST['sbmLoginForm']))
-        ucLogin($dbConn, $_POST['txtLoginEmail'], $_POST['txtLoginPassword']);
+    {
+        $_SESSION['userId'] = ucLogin($dbConn, $_POST['txtLoginEmail'], $_POST['txtLoginPassword']);
+    }
     else if(isset($_POST['sbmLogout']))
-        ucLogout();
+    {
+        $_SESSION['userId'] = ucLogout();
+    }
     else if(isset($_POST['sbmRegisterForm']))
-        ucRegisterNewUser($dbConn, $_POST['txtRegisterEmail'], $_POST['txtRegisterPassword'], $_POST['txtRegisterPassworRepeated']);
+        ucRegisterNewUser($dbConn, $_POST['txtRegisterEmail'], $_POST['txtRegisterPassword'], $_POST['txtRegisterPassworRepeated'], $sendMail);
     else if(isset($_POST['sbmSetUserDetails']))
         ucSetUserDetails($dbConn, $_SESSION['userId'], $_POST['userDetails']);
     else if(isset($_POST['sbmAddEmployer']))
@@ -90,8 +94,6 @@
         $r = mkdir($folder, 0777, true);
         file_put_contents($folder . 'bewerbungen.html', $html);
         exec('unoconv ' . $folder . 'bewerbungen.html', $output);
-        echo $folder;
-        die();
         if(count($output) > 0)
         {
             var_dump($output);
@@ -121,7 +123,7 @@
 
 
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../css/current.css">
+    <link rel="stylesheet" href="css/current.css">
     <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 <script type="text/javascript">

@@ -1,7 +1,7 @@
 <?php
-    require_once('../vendor/phpmailer/phpmailer/src/Exception.php');
-    require_once('../vendor/phpmailer/phpmailer/src/PHPMailer.php');
-    require_once('../vendor/phpmailer/phpmailer/src/SMTP.php');
+    require_once('vendor/phpmailer/phpmailer/src/Exception.php');
+    require_once('vendor/phpmailer/phpmailer/src/PHPMailer.php');
+    require_once('vendor/phpmailer/phpmailer/src/SMTP.php');
 
     use PHPMailer\PHPMailer\PHPMailer;
 
@@ -16,8 +16,16 @@
         return $fileName;
     }
 
-    function sendMail($from, $fromName, $subject, $body, $to, $pdfAttachment)
+    $sendMail = function($from, $fromName, $subject, $body, $to, $pdfAttachment)
     {
+        if(is_null($from))
+        {
+            return new TaskResult(false, ['Sender email was null'], []);
+        }
+        if(is_null($to))
+        {
+            return new TaskResult(false, ['Receiver email was null'], []);
+        }
         try
         {
             $email = new PHPMailer(true);

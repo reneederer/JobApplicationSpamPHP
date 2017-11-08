@@ -2,29 +2,30 @@
 
 require_once('validate.php');
 require_once('dbFunctions.php');
+require_once('helperFunctions.php');
 
 function ucLogin($dbConn, $email, $password)
 {
+    //return the user id if login succeeds, else return a non-existing user id
     $userData = getUserDataByEmail($dbConn, $email);
     if(count($userData) > 0 && is_null($userData['confirmationString']) && empty($userData) === false && password_verify($password, $userData['password']))
     {
-        $_SESSION['userId'] = $userData['userId'];
+        return $userData['userId'];
     }
     else
     {
-        die("Failed to login");
-        //TODO print error message
+        return -1;
     }
 }
 
 function ucLogout()
 {
-    $_SESSION['userId'] = -1;
+    //return a non-existing user id
+    return -1;
 }
 
-function ucRegisterNewUser($dbConn, $email, $password, $passwordRepeated)
+function ucRegisterNewUser($dbConn, $email, $password, $passwordRepeated, $sendMailFunc)
 {
-    //TODO send confirmation email
     if($password !== $passwordRepeated)
     {
         return new TaskResult(false, ['Passworte stimmen nicht überein'], []);
@@ -37,17 +38,18 @@ function ucRegisterNewUser($dbConn, $email, $password, $passwordRepeated)
             return new TaskResult(false, ['Diese Email-Adresse ist schon registriert.'], []);
         }
         $confirmationString = bin2hex(random_bytes(16));
-        $taskResult = sendMail('rene.ederer.nbg@gmail.com'
-            , 'bewerbungsspam.de'
+        $taskResult = $sendMailFunc('admin@bewerbungsspam.de'
+            , 'www.bewerbungsspam.de'
             , 'Bitte bestätige deine Anmeldung bei www.bewerbungsspam.de'
-            , "Hallo,\nbitte klicke diesen Link: http://localhost/jobApplicationSpam/src/index.php?email=$email&confirmationString=$confirmationString\nViele Grüße\nDein Team von www.bewerbungsspam.de"
-            , $email //TODO $employerValuesDict['$firmaEmail']
+            , "Hallo,\n\nbitte besuche diesen Link um deine Email-Addresse zu bestätigen: http://localhost/jobApplicationSpam/src/index.php?email=$email&confirmationString=$confirmationString\n\nViele Grüße\n\nDein Team von www.bewerbungsspam.de"
+            , $email
             , null);
         addUser($dbConn, $email, password_hash($password, PASSWORD_DEFAULT), $confirmationString);
+        return $taskResult;
     }
     else
     {
-        $taskResult->setInvalidWithErrorMsg('Your email doesn\'t look valid.');
+        $taskResult->setInvalidWithErrorMsg("Your email doesn't look valid.");
     }
 }
 
@@ -57,6 +59,11 @@ function ucConfirmEmailAddress($dbConn, $email, $userConfirmationString)
     if($realConfirmationString === $userConfirmationString)
     {
         setEmailConfirmed($dbConn, $email);
+        return new TaskResult(true, [], []);
+    }
+    else
+    {
+        return new TaskResult(false, ['Bestätigungs-Codes stimmen nicht überein'], []);
     }
 }
 

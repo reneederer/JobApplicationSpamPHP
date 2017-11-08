@@ -14,7 +14,7 @@ create table jobApplication(id int primary key auto_increment, userId int not nu
 create table jobApplicationStatusValue(id int primary key, status varchar(50));
 create table jobApplicationStatus(id int primary key auto_increment, jobApplicationId int, statusChangedOn date, dueOn datetime, statusValueId int, statusMessage varchar(200), foreign key(jobApplicationId) references jobApplication(id), foreign key(statusValueId) references jobApplicationStatusValue(id));
 create table jobCenterContract(id int primary key auto_increment, userId int not null, repeatEvery int not null, jobApplicationCount int not null, expireDate date not null, foreign key(userId) references user(id));
-insert into user(id, email, password, confirmationString, created) values(1, "ene.ederer.nbg@gmail.com", "$renePassword", null, curdate());
+insert into user(id, email, password, confirmationString, created) values(1, "rene.ederer.nbg@gmail.com", "$renePassword", null, curdate());
 insert into user(id, email, password, confirmationString, created) values(2, "helmut@goerke.de", "$helmutPassword", null, curdate());
 insert into userDetails(userId, gender, degree, firstName, lastName, street, postcode, city, mobilePhone, phone, birthday, birthplace, maritalStatus) values(1, "m", "", "René", "Ederer", "Raabstr. 24A", "90429", "Nürnberg", "01520 2723494", "", "19.07.1982", "Nürnberg", "ledig");
 insert into userDetails(userId, gender, degree, firstName, lastName, street, postcode, city, mobilePhone, phone, birthday, birthplace, maritalStatus) values(2, "m", "", "Helmut", "Goerke", "Raabstr. 24A", "90429", "Nürnberg", "01520 2292724", "", "19.07.1963", "Nürnberg", "ledig");

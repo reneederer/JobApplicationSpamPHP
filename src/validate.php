@@ -1,4 +1,25 @@
 <?php
+    class Either
+    {
+        public $value;
+        private $isRight;
+        const RIGHT = true;
+        const LEFT = !RIGHT;
+        function __construct($value, $isRight)
+        {
+            $this->value = $value;
+            $this->isRight = $isRight;
+        }
+
+        function isRight()
+        {
+            return $isRight;
+        }
+        function isLeft()
+        {
+            return !$isRight;
+        }
+    }
 
     class TaskResult
     {
