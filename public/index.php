@@ -105,7 +105,7 @@ else if(isset($_POST['sbmDownloadSentApplications']))
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>Dein Bewerbungs-Spam!</title>
+    <title>www.bewerbungsspam.de</title>
 
 
     <link rel="stylesheet" href="css/current.css" />
@@ -136,12 +136,14 @@ function templatePdfSelected(pdfFormIndex)
         fileInput.setAttribute("name", "filePdfs[]");
         fileInput.setAttribute("value", "PDF Anhang");
         fileInput.setAttribute("onChange", "templatePdfSelected(" + (+pdfFormIndex + 1) + ");");;
+        fileInput.setAttribute("accept", ".pdf");
         fileInput.setAttribute("id", "filePdf" + (+pdfFormIndex + 1));
         label2 = document.createElement("label");
-        label2.appendChild(document.createTextNode("*.pdf auswählen"));
+        label2.appendChild(document.createTextNode("*.pdf"));
         label2.setAttribute("id", "lblFilePdf" + (+pdfFormIndex + 1));
         label2.setAttribute("role", "button");
         label2.setAttribute("for", "filePdf" + (+pdfFormIndex + 1));
+        label2.setAttribute("min-width", "100%");
         divInner2 = document.createElement("div");
         divInner2.setAttribute("class", "col-sm-12 col-md-1");
         divInner2.appendChild(fileInput);
@@ -225,7 +227,7 @@ function submitForm(url, form)
 
 <header class="sticky" id="header-toggle">
     <label class="drawer-toggle button" style="position:sticky" for="navigation-toggle"></label>
-    <a href="" class="logo">Bewerbungs-Spam!</span></a>
+    <a href="" class="logo">www.bewerbungsspam.de</span></a>
 </header>
 <div class="container" style="padding-left: 0.25rem;">
     <div class="row"> <input type="checkbox" id="navigation-toggle">
@@ -242,6 +244,41 @@ function submitForm(url, form)
             <main>
                 <div class="row" style="padding-top: 40px;" id="navigation-title">
                     <div id="mainDiv" class="col-sm-12">
+                        <label for="loginDialog">Show login</label>
+                        <input id="loginDialog" type="checkbox" onChange="document.querySelector('#loginEmail').focus();"/>
+                        <div class="modal">
+                            <div class="card">
+                                <label for="loginDialog" class="close"></label>
+                                <h3 class="section">Login</h3>
+                                <form onSubmit="document.querySelector('#loginDialog').value=false;submitForm('forms/login.php', this);return false;">
+                                    <label for="loginEmail">Email</label>
+                                    <input type="text" id="loginEmail" name="loginEmail" />
+                                    <label for="loginPassword">Password</label>
+                                    <input type="password" id="loginPassword"  name="loginPassword" />
+                                    <input type="submit" value="Anmelden" />
+                                </form>
+                            </div>
+                        </div>
+
+
+
+                        <label for="registerDialog">Show register</label>
+                        <input id="registerDialog" type="checkbox" onChange="document.querySelector('#registerEmail').focus();"/>
+                        <div class="modal">
+                            <div class="card">
+                                <label for="registerDialog" class="close"></label>
+                                <h3 class="section">Register</h3>
+                                <form onSubmit="document.querySelector('#registerDialog').value=false;submitForm('forms/registerNewUser.php', this);return false;">
+                                    <label for="registerEmail">Email</label>
+                                    <input type="text" id="registerEmail" name="registerEmail" type="text" />
+                                    <label for="registerPassword">Passwort</label>
+                                    <input type="password" id="registerPasswort" name="registerPassword" />
+                                    <label for="registerPasswordRepeated">Passwort wiederholen</label>
+                                    <input type="password" id="registerPasswordRepeated" name="registerPasswordRepeated" />
+                                    <input type="submit" value="Registrieren" />
+                                </form>
+                            </div>
+                        </div>
 <?php
 if(isset($_SESSION['userId']) && $_SESSION['userId'] >= 1)
 {

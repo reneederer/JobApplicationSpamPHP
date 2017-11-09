@@ -61,20 +61,20 @@
             </div>
             <div class="row responsive-label">
                 <div class="col-sm-12 col-md-1" style="min-width:130px">
-                    <label for="fileOdt">Vorlage (*.odt oder *.docx)</label>
+                    <label for="fileOdt">Vorlage</label>
                 </div>
                 <div class="col-sm-12 col-md-1">
                     <input type="file" name="fileOdt" id="fileOdt" accept=".odt,.docx" onChange="document.querySelector('#lblFileOdt').innerHTML=this.value" />
-                    <label id="lblFileOdt">Nichts ausgew&auml;hlt</label>
+                    <label id="lblFileOdt" role="button" for="fileOdt" style="min-width:100%">*.odt oder *.docx</label>
                 </div>
             </div>
             <div class="row responsive-label">
                 <div class="col-sm-12 col-md-1" style="min-width:130px">
-                    <label for="filePdf1">Pdf Anhang</label>
+                    <label for="filePdf1">Anhang</label>
                 </div>
                 <div class="col-sm-12 col-md-1">
                     <input type="file" id="filePdf1" name="filePdfs[]" accept=".pdf" onChange="templatePdfSelected(1);" />
-                    <label id="lblFilePdf1" for="filePdf1" role="button">Datei ausw&auml;hlen</label>
+                    <label id="lblFilePdf1" for="filePdf1" role="button" style="min-width:100%">*.pdf</label>
                 </div>
             </div>
             <div class="row">

@@ -25,7 +25,7 @@
 ?>
 <div>
     <h1>Arbeitgeber hinzuf&uuml;gen</h1>
-        <form action="forms/addEmployer.php" method="post">
+        <form action="forms/addEmployer.php">
         <input type="text" name="txtReadEmployerValuesFromWebSite" />
         <input type="submit" name="sbmReadEmployerValuesFromWebSite" value="Werte von Website einlesen" />
     </form>

@@ -2,6 +2,7 @@
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
+
     require_once('/var/www/html/jobApplicationSpam/vendor/phpmailer/phpmailer/src/Exception.php');
     require_once('/var/www/html/jobApplicationSpam/vendor/phpmailer/phpmailer/src/PHPMailer.php');
     require_once('/var/www/html/jobApplicationSpam/vendor/phpmailer/phpmailer/src/SMTP.php');

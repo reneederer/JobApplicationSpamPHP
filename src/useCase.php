@@ -6,16 +6,21 @@ require_once('helperFunctions.php');
 
 function ucLogin($dbConn, $email, $password)
 {
-    //return the user id if login succeeds, else return a non-existing user id
     $userData = getUserDataByEmail($dbConn, $email);
-    if(count($userData) > 0 && is_null($userData['confirmationString']) && empty($userData) === false && password_verify($password, $userData['password']))
+    $taskResult = new TaskResult(true, [], []);
+    if(count($userData) <= 0 || password_verify($password, $userData['password']) === false)
     {
-        return $userData['userId'];
+        $taskResult->setInvalidWithErrorMsg('Email-Adresse oder Passwort ist falsch.');
+    }
+    else if(!is_null($userData['confirmationString']))
+    {
+        $taskResult->setInvalidWithErrorMsg('Bitte bestätige deine Email-Adresse. Wir haben dir einen Link per Email geschickt.');
     }
     else
     {
-        return -1;
+        $_SESSION['userId'] = $userData['userId'];
     }
+    return $taskResult;
 }
 
 function ucLogout()
@@ -50,6 +55,7 @@ function ucRegisterNewUser($dbConn, $email, $password, $passwordRepeated, $sendM
     else
     {
         $taskResult->setInvalidWithErrorMsg("Your email doesn't look valid.");
+        return $taskResult;
     }
 }
 
