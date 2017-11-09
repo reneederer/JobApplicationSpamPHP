@@ -29,6 +29,7 @@ if(isset($_POST['sbmLoginForm']))
 else if(isset($_POST['sbmLogout']))
 {
     $_SESSION['userId'] = ucLogout();
+    session_unset();
 }
 else if(isset($_POST['sbmRegisterForm']))
     ucRegisterNewUser($dbConn, $_POST['txtRegisterEmail'], $_POST['txtRegisterPassword'], $_POST['txtRegisterPassworRepeated'], $sendMail);
@@ -86,9 +87,6 @@ else if(isset($_POST['sbmDownloadSentApplications']))
         die();
     }
 }
-
-
-
 
 ?>
 
@@ -198,10 +196,13 @@ function submitForm(url, form)
     var request = new XMLHttpRequest();
     request.open("POST", url, true);
     request.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200)
+        if (this.readyState == 4)
         {
             document.body.style.cursor = "pointer";
-            document.querySelector("#mainDiv").innerHTML = this.responseText;
+            if(this.status === 200)
+            {
+                document.querySelector("#mainDiv").innerHTML = this.responseText;
+            }
         }
         else if(this.readyState == 4)
         {
@@ -209,7 +210,7 @@ function submitForm(url, form)
         }
 
     };
-    if(form == null || form == undefined)
+    if(form == null)
     {
         request.send();
     }
@@ -242,8 +243,8 @@ function closeWindowOnEscape(el, ev)
         <nav class="sticky drawer col-md-4 col-lg-2" style="" id="real-drawer">
             <label class="close" for="navigation-toggle"></label>
             <a href="" onClick="submitForm('forms/uploadTemplate.php', null);return false;">Bewerbungsvorlage hochladen</a>
-            <a href="" onClick="submitForm('forms/setUserDetails.php', null);return false;">Deine Werte &auml;ndern</a>
-            <a href="" onClick="submitForm('forms/addEmployer.php', null); return false">Arbeitgeber hinzuf&uuml;gen</a>
+            <a href="" onClick="submitForm('forms/setUserDetails.php', null);return false;">Deine Werte ändern</a>
+            <a href="" onClick="submitForm('forms/addEmployer.php', null); return false">Arbeitgeber hinzufügen</a>
             <a href="" onClick="submitForm('forms/applyNow.php', null);return false">Jetzt bewerben</a></h3>
             <a href="">Abgeschickte Bewerbungen anzeigen</a>
             <a href="">Termine</a>
@@ -297,53 +298,6 @@ if(isset($_SESSION['userId']) && $_SESSION['userId'] >= 1)
     echo htmlspecialchars($email); ?>
                         <br />
                         <form action="" method="post"><input type="submit" value="Ausloggen" name="sbmLogout" /></form>
-                    </div>
-<?php
-}
-else if((!isset($_SESSION['userId']) || $_SESSION['userId'] <= -1) && !isset($_POST['sbmShowRegisterForm']))
-{
-?>
-                    <div id="loginForm" class="page">
-                        <form action="" method="post">
-                            <table>
-                                <tr>
-                                    <td>Email:</td>
-                                    <td><input type="text" value="" name="txtLoginEmail" /></td>
-                                </tr>
-                                <tr>
-                                    <td>Password:</td>
-                                    <td><input type="password" value="" name="txtLoginPassword" /></td>
-                                </tr>
-                                <tr>
-                                    <td><input type="submit" name="sbmLoginForm" value="Einloggen" /></td>
-                            </table>
-                        </form>
-                        <form action="" method="post"><input type="submit" value="Neu? Registrieren!" name="sbmShowRegisterForm" /></form>
-                    </div>
-<?php
-} else if(isset($_POST['sbmShowRegisterForm']))
-{
-?>
-                    <div id="registerForm" class="page">
-                        <form action="" method="post">
-                            <table>
-                                <tr>
-                                    <td>Email:</td>
-                                    <td><input type="text" value="" name="txtRegisterEmail" /></td>
-                                </tr>
-                                <tr>
-                                    <td>Password:</td>
-                                    <td><input type="password" value="" name="txtRegisterPassword" /></td>
-                                </tr>
-                                <tr>
-                                    <td>Password wiederholen:</td>
-                                    <td><input type="password" value="" name="txtRegisterPassworRepeated" /></td>
-                                </tr>
-                                    <td></td>
-                                    <td><input type="submit" name="sbmRegisterForm" value="Registrieren" /></td>
-                                </tr>
-                            </table>
-                        </form>
                     </div>
 
 <?php

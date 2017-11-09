@@ -8,9 +8,15 @@
     require_once('/var/www/html/jobApplicationSpam/src/useCase.php');
     require_once('/var/www/html/jobApplicationSpam/src/config.php');
 
+    if(!isset($_SESSION['userId']))
+    {
+        include('/var/www/html/jobApplicationSpam/public/forms/howto.php');
+        die();
+    }
+
     $dbConn = new PDO('mysql:host=localhost;dbname=' . getConfig()['database']['database'], getConfig()['database']['username'], getConfig()['database']['password']);
     $setUserDetailsMsg = '';
-    if(($_SESSION['userId'] ?? -1) >= 1 && isset($_POST['userDetails']) && isset($_POST['userDetails']['lastName']))
+    if(isset($_POST['userDetails']) && isset($_POST['userDetails']['lastName']))
     {
         $taskResult = ucSetUserDetails($dbConn, $_SESSION['userId'], $_POST['userDetails']);
         if($taskResult->isValid)
@@ -44,7 +50,7 @@
     {
         $userDetails = $_POST['userDetails'];
     }
-    else if($_SESSION['userId'] >= 1)
+    else if(($_SESSION['userId'] ?? -1) >= 1)
     {
             $userDetails = getUserDetails($dbConn, $_SESSION['userId']);
     }

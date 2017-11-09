@@ -21,7 +21,6 @@ function ucLogin($dbConn, $email, $password)
 
 function ucLogout()
 {
-    //return a non-existing user id
     return -1;
 }
 

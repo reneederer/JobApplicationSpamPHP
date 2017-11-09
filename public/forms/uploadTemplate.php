@@ -37,10 +37,10 @@
             </div>
             <div class="row responsive-label">
                 <div class="col-sm-12 col-md-1" style="min-width:130px">
-                    <label for="txtJobApplicationTemplateName">Bewerbung als</label>
+                    <label for="template[userAppliesAs]">Bewerbung als</label>
                 </div>
                 <div class="col-sm-12 col-md-1">
-                    <input type="text" class="form-control" id="txtUserAppliesAs" name="template[userAppliesAs]" value="<?php if(isset($_POST['template'])) echo htmlspecialchars($_POST['template']['userAppliesAs']) ?? ''; ?>" />
+                    <input type="text" class="form-control" id="template[userAppliesAs]" name="template[userAppliesAs]" value="<?php if(isset($_POST['template'])) echo htmlspecialchars($_POST['template']['userAppliesAs']) ?? ''; ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
