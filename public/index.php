@@ -3,13 +3,13 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once('../src/config.php');
-require_once('../src/useCase.php');
-require_once('../src/odtFunctions.php');
-require_once('../src/websiteFunctions.php');
-require_once('../src/dbFunctions.php');
-require_once('../src/helperFunctions.php');
-require_once('../src/validate.php');
+require_once('/var/www/html/jobApplicationSpam/src/config.php');
+require_once('/var/www/html/jobApplicationSpam/src/useCase.php');
+require_once('/var/www/html/jobApplicationSpam/src/odtFunctions.php');
+require_once('/var/www/html/jobApplicationSpam/src/websiteFunctions.php');
+require_once('/var/www/html/jobApplicationSpam/src/dbFunctions.php');
+require_once('/var/www/html/jobApplicationSpam/src/helperFunctions.php');
+require_once('/var/www/html/jobApplicationSpam/src/validate.php');
 
 session_start();
 
@@ -110,7 +110,49 @@ else if(isset($_POST['sbmDownloadSentApplications']))
 
     <link rel="stylesheet" href="css/current.css" />
     <link rel="stylesheet" href="https://gitcdn.link/repo/Chalarangelo/mini.css/master/dist/mini-default.min.css" />
-<script type="text/javascript">
+    <style>
+        .responsive-label {align-items: center;}
+    </style>
+<script>
+function templatePdfSelected(pdfFormIndex)
+{
+    document.querySelector("#lblFilePdf" + (+pdfFormIndex)).innerHTML = document.querySelector("#filePdf" + (+pdfFormIndex)).value;
+    lastDiv = document.querySelector("#formUploadTemplate div:last-child");
+    filePdfs = document.querySelectorAll("#formUploadTemplate [name = 'filePdfs[]']");
+    if(filePdfs.length == pdfFormIndex)
+    {
+        lastFilePdfDiv = filePdfs[filePdfs.length - 1].parentNode.parentNode;
+        label1 = document.createElement("label");
+        label1.setAttribute("for", "filePdf" + (+pdfFormIndex + 1));
+        label1.appendChild(document.createTextNode("Pdf Anhang"));
+        divInner1 = document.createElement("div");
+        divInner1.setAttribute("class", "col-sm-12 col-md-1");
+        divInner1.setAttribute("style", "min-width:130px");
+        divInner1.appendChild(label1);
+
+
+        fileInput = document.createElement("input");
+        fileInput.setAttribute("type", "file");
+        fileInput.setAttribute("name", "filePdfs[]");
+        fileInput.setAttribute("value", "PDF Anhang");
+        fileInput.setAttribute("onChange", "templatePdfSelected(" + (+pdfFormIndex + 1) + ");");;
+        fileInput.setAttribute("id", "filePdf" + (+pdfFormIndex + 1));
+        label2 = document.createElement("label");
+        label2.appendChild(document.createTextNode("*.pdf auswählen"));
+        label2.setAttribute("id", "lblFilePdf" + (+pdfFormIndex + 1));
+        label2.setAttribute("role", "button");
+        label2.setAttribute("for", "filePdf" + (+pdfFormIndex + 1));
+        divInner2 = document.createElement("div");
+        divInner2.setAttribute("class", "col-sm-12 col-md-1");
+        divInner2.appendChild(fileInput);
+        divInner2.appendChild(label2);
+        divOuter = document.createElement("div");
+        divOuter.setAttribute("class", "row responsive-label");
+        divOuter.appendChild(divInner1);
+        divOuter.appendChild(divInner2);
+        lastFilePdfDiv.insertAdjacentElement("afterend", divOuter);
+    }
+}
 selectedEmployerRowIndex = 0;
 lastEmployerBackgroundColor = "white";
 selectedTemplateRowIndex = 0;
@@ -133,27 +175,6 @@ function selectEmployerRowIndex(row, employerId)
 }
 
 
-function templateAppendixSelected(fileNr)
-{
-    lastTableRow = $("#tblUploadJobApplicationTemplate tr").eq(-1);
-    fileAppendices = $("#tblUploadJobApplicationTemplate [name = 'fileAppendices[]'");
-    if(fileAppendices.length == fileNr)
-    {
-        td1 = $("<td />").text("PDF Anhang");
-        fileInput = $("<input></input>")
-            .attr("type", "file")
-            .attr("name", "fileAppendices[]")
-            .attr("value", "PDF Anhang")
-            .attr("onChange", "templateAppendixSelected(" + (fileNr + 1) + ");");
-        td2 = $("<td />").append(fileInput);
-        tr = $("<tr />");
-        tr.append(td1);
-        tr.append(td2);
-        tr.insertBefore(lastTableRow);
-    }
-
-
-}
 
 function validateInput(el)
 {
@@ -169,10 +190,6 @@ function validateInput(el)
     }
 }
 
-function showFormAddEmployer()
-{
-    submitAddEmployer();
-}
 
 function submitForm(url, form)
 {
@@ -208,23 +225,22 @@ function submitForm(url, form)
 
 <header class="sticky" id="header-toggle">
     <label class="drawer-toggle button" style="position:sticky" for="navigation-toggle"></label>
-    <a href="index" class="logo">Bewerbungs-Spam!</span></a>
+    <a href="" class="logo">Bewerbungs-Spam!</span></a>
 </header>
 <div class="container" style="padding-left: 0.25rem;">
     <div class="row"> <input type="checkbox" id="navigation-toggle">
         <nav class="sticky drawer col-md-4 col-lg-2" style="" id="real-drawer">
             <label class="close" for="navigation-toggle"></label>
-            <a href="" onClick="submitForm('uploadTemplate.php', null);return false;">Bewerbungsvorlage hochladen</a>
-            <a href="" onClick="submitForm('setUserValues.php', null);return false;">Deine Werte &auml;ndern</a>
-            <a href="" onClick="submitForm('addEmployer.php', null); return false">Arbeitgeber hinzuf&uuml;gen</a>
-            <a href="">Jetzt bewerben</a></h3>
+            <a href="" onClick="submitForm('forms/uploadTemplate.php', null);return false;">Bewerbungsvorlage hochladen</a>
+            <a href="" onClick="submitForm('forms/setUserDetails.php', null);return false;">Deine Werte &auml;ndern</a>
+            <a href="" onClick="submitForm('forms/addEmployer.php', null); return false">Arbeitgeber hinzuf&uuml;gen</a>
+            <a href="" onClick="submitForm('forms/applyNow.php', null);return false">Jetzt bewerben</a></h3>
             <a href="">Abgeschickte Bewerbungen anzeigen</a>
             <a href="">Termine</a>
         </nav>
         <div class="col-sm-12 col-md-8 col-lg-10">
             <main>
                 <div class="row" style="padding-top: 40px;" id="navigation-title">
-<button type="button" onClick="showFormAddEmployer();">Change Text!</button>
                     <div id="mainDiv" class="col-sm-12">
 <?php
 if(isset($_SESSION['userId']) && $_SESSION['userId'] >= 1)
