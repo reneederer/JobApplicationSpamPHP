@@ -3,6 +3,7 @@
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
 
+    if(!isset($_SESSION)) { session_start(); }
     require_once('/var/www/html/jobApplicationSpam/src/validate.php');
     require_once('/var/www/html/jobApplicationSpam/src/dbFunctions.php');
     require_once('/var/www/html/jobApplicationSpam/src/useCase.php');
@@ -11,13 +12,17 @@
     if(isset($_POST['loginEmail']))
     {
         $dbConn = new PDO('mysql:host=localhost;dbname=' . getConfig()['database']['database'], getConfig()['database']['username'], getConfig()['database']['password']);
-        $taskResult = ucLogin($dbConn, $_POST['loginEmail'], $_POST['loginPassword']);
+        $taskResultAndUserId = ucLogin($dbConn, $_POST['loginEmail'], $_POST['loginPassword']);
+        $taskResult = $taskResultAndUserId[0];
+        $userId = $taskResultAndUserId[1];
         if($taskResult->isValid)
         {
+            $_SESSION['userId'] = $userId;
             include('/var/www/html/jobApplicationSpam/public/forms/addEmployer.php');
         }
         else
         {
+            $_SESSION['userId'] = $userId;
             $loginMsg = 'Entschuldigung, die Anfrage konnte nicht verarbeitet werden. ' . implode(". ", $taskResult->errors);
         }
     }

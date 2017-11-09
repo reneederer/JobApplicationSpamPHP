@@ -2,16 +2,16 @@
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
-    session_start();
+    if(!isset($_SESSION)) { session_start(); }
     require_once('/var/www/html/jobApplicationSpam/src/validate.php');
     require_once('/var/www/html/jobApplicationSpam/src/dbFunctions.php');
     require_once('/var/www/html/jobApplicationSpam/src/useCase.php');
     require_once('/var/www/html/jobApplicationSpam/src/config.php');
 
-    $setUserDetailsMsg = 'Deine Daten wurden geändert!';
-    if(isset($_POST['userDetails']) && isset($_POST['userDetails']['lastName']))
+    $dbConn = new PDO('mysql:host=localhost;dbname=' . getConfig()['database']['database'], getConfig()['database']['username'], getConfig()['database']['password']);
+    $setUserDetailsMsg = '';
+    if(($_SESSION['userId'] ?? -1) >= 1 && isset($_POST['userDetails']) && isset($_POST['userDetails']['lastName']))
     {
-        $dbConn = new PDO('mysql:host=localhost;dbname=' . getConfig()['database']['database'], getConfig()['database']['username'], getConfig()['database']['password']);
         $taskResult = ucSetUserDetails($dbConn, $_SESSION['userId'], $_POST['userDetails']);
         if($taskResult->isValid)
         {
@@ -25,7 +25,30 @@
 ?>
 
 <div>
-    <h1>Deine Werte ändern</h1>
+<h1>Deine Werte ändern</h1>
+<?php
+    $userDetails = ['gender' => '',
+        'degree' => '',
+        'firstName' => '',
+        'lastName' => '',
+        'street' => '',
+        'postcode' => '',
+        'city' => '',
+        'email' => '',
+        'phone' => '',
+        'mobilePhone' => '',
+        'birthday' => '',
+        'birthplace' => '',
+        'maritalStatus' => ''];
+    if(isset($_POST['userDetails']))
+    {
+        $userDetails = $_POST['userDetails'];
+    }
+    else if($_SESSION['userId'] >= 1)
+    {
+            $userDetails = getUserDetails($dbConn, $_SESSION['userId']);
+    }
+?>
     <form onSubmit="submitForm('forms/setUserDetails.php', this);return false;">
         <fieldset>
             <div class="row responsive-label">
@@ -33,9 +56,9 @@
                     <label>Geschlecht</label>
                 </div>
                 <div class="input-group">
-                    <input type="hidden" name="rbUserGender" value="x" />
-                    <input id="rbUserMale" type="radio" name="userDetails[gender]" value="m" <?php if(isset($_POST['rbUserGender']) && $_POST['rbUserGender'] === 'm') echo 'checked="checked"'; ?> /><label for="rbUserMale">Männlich</label>
-                    <input id="rbUserFemale" type="radio" name="userDetails[gender]" value="f" <?php if(isset($_POST['rbUserGender']) && $_POST['rbUserGender'] === 'f') echo 'checked="checked"'; ?> /><label for="rbUserFemale">Weiblich</label>
+                    <input type="hidden" name="userDetails[gender]" value="" />
+                    <input id="rbUserMale" type="radio" name="userDetails[gender]" value="m" <?php if($userDetails['gender'] === 'm') echo 'checked="checked"'; ?> /><label for="rbUserMale">Männlich</label>
+                    <input id="rbUserFemale" type="radio" name="userDetails[gender]" value="f" <?php  if($userDetails['gender'] == 'f') echo 'checked="checked"'; ?> /><label for="rbUserFemale">Weiblich</label>
                 </div>
             </div>
             <div class="row responsive-label">
@@ -43,7 +66,7 @@
                     <label for="userDetailsDegree">Titel</label>
                 </div>
                 <div class="col-sm-12 col-md-1">
-                    <input id="userDetailsDegree" type="text" name="userDetails[degree]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['degree']) ?? ''; ?>" />
+                    <input id="userDetailsDegree" type="text" name="userDetails[degree]" value="<?php echo htmlspecialchars($userDetails['degree']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -51,7 +74,7 @@
                     <label>Vorname</label>
                 </div>
                 <div class="col-sm-12 col-md">
-                    <input type="text" name="userDetails[firstName]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['firstName']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[firstName]" value="<?php echo htmlspecialchars($userDetails['firstName']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -59,7 +82,7 @@
                     <label>Nachname</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[lastName]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['lastName']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[lastName]" value="<?php echo htmlspecialchars($userDetails['lastName']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -67,7 +90,7 @@
                     <label>Stra&szlig;e</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[street]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['street']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[street]" value="<?php echo htmlspecialchars($userDetails['street']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -75,7 +98,7 @@
                     <label>Postleitzahl</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[postcode]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['postcode']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[postcode]" value="<?php echo htmlspecialchars($userDetails['postcode']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -83,7 +106,7 @@
                     <label>Stadt</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[city]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['city']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[city]" value="<?php echo htmlspecialchars($userDetails['city']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -91,7 +114,7 @@
                     <label>Email</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[email]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['email']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[email]" value="<?php echo htmlspecialchars($userDetails['email']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -99,7 +122,7 @@
                     <label>Telefon mobil</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[mobilePhone]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['mobilePhone']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[mobilePhone]" value="<?php echo htmlspecialchars($userDetails['mobilePhone']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -107,7 +130,7 @@
                     <label>Telefon fest</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[phone]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['phone']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[phone]" value="<?php echo htmlspecialchars($userDetails['phone']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -115,7 +138,7 @@
                     <label>Geburtstag</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[birthday]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['birthday']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[birthday]" value="<?php echo htmlspecialchars($userDetails['birthday']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -123,7 +146,7 @@
                     <label>Geburtsort</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[birthplace]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['birthplace']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[birthplace]" value="<?php echo htmlspecialchars($userDetails['birthplace']); ?>" />
                 </div>
             </div>
             <div class="row responsive-label">
@@ -131,7 +154,7 @@
                     <label>Familienstand</label>
                 </div>
                 <div>
-                    <input type="text" name="userDetails[maritalStatus]" value="<?php if(isset($_POST['userDetails'])) echo htmlspecialchars($_POST['userDetails']['maritalStatus']) ?? ''; ?>" />
+                    <input type="text" name="userDetails[maritalStatus]" value="<?php echo htmlspecialchars($userDetails['maritalStatus']); ?>" />
                 </div>
             </div>
             <input type="submit" name="sbmSetUserDetails" value="Deine Werte &auml;ndern"/>

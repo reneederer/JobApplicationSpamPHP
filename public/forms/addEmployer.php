@@ -2,14 +2,14 @@
     ini_set('display_errors', 1);
     ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
-    session_start();
+    if(!isset($_SESSION)) { session_start(); }
     require_once('/var/www/html/jobApplicationSpam/src/validate.php');
     require_once('/var/www/html/jobApplicationSpam/src/dbFunctions.php');
     require_once('/var/www/html/jobApplicationSpam/src/useCase.php');
     require_once('/var/www/html/jobApplicationSpam/src/config.php');
 
     $addEmployerMsg = '';
-    if(isset($_POST['employer']) && isset($_POST['employer']['lastName']))
+    if((($_SESSION['userId'] ?? -1) >= 1) && isset($_POST['employer']) && isset($_POST['employer']['lastName']))
     {
         $dbConn = new PDO('mysql:host=localhost;dbname=' . getConfig()['database']['database'], getConfig()['database']['username'], getConfig()['database']['password']);
         $taskResult = ucAddEmployer($dbConn, $_SESSION['userId'], $_POST['employer']);

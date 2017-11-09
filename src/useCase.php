@@ -16,11 +16,7 @@ function ucLogin($dbConn, $email, $password)
     {
         $taskResult->setInvalidWithErrorMsg('Bitte bestätige deine Email-Adresse. Wir haben dir einen Link per Email geschickt.');
     }
-    else
-    {
-        $_SESSION['userId'] = $userData['userId'];
-    }
-    return $taskResult;
+    return [$taskResult, $userData['userId'] ?? -1];
 }
 
 function ucLogout()
@@ -127,10 +123,7 @@ function ucSetUserDetails($dbConn, $userId, $userDetails)
     {
         setUserDetails($dbConn, $userId, $userDetails);
     }
-    else
-    {
-        $currentMessage .= join("<br>", $validateUserDetailsResult->errors);
-    }
+    return $validateUserDetailsResult;
 }
 
 function ucApplyNow($dbConn, $userId, $employerId, $templateId, $mailToUserOnly)

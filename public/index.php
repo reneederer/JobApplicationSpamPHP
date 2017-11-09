@@ -11,7 +11,7 @@ require_once('/var/www/html/jobApplicationSpam/src/dbFunctions.php');
 require_once('/var/www/html/jobApplicationSpam/src/helperFunctions.php');
 require_once('/var/www/html/jobApplicationSpam/src/validate.php');
 
-session_start();
+if(!isset($_SESSION)) { session_start(); }
 
 $dbConn = new PDO('mysql:host=localhost;dbname=' . getConfig()['database']['database'], getConfig()['database']['username'], getConfig()['database']['password']);
 $dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

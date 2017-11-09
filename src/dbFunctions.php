@@ -261,7 +261,7 @@
 
     function getUserDetails($dbConn, $userId)
     {
-        $statement = $dbConn->prepare('select gender, degree, firstName, lastName, street, postcode, city, phone, mobilePhone, birthday, birthplace, maritalStatus from userDetails where userId=:userId limit 1');
+        $statement = $dbConn->prepare('select gender, degree, firstName, lastName, street, postcode, city, user.email, phone, mobilePhone, birthday, birthplace, maritalStatus from userDetails join user on userDetails.userId = user.id where userId=:userId limit 1');
         $statement->bindParam(':userId', $userId);
         $result = $statement->execute();
         if($result === false)
