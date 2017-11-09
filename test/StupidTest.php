@@ -20,7 +20,7 @@ class StupidTest extends TestCase
     {
         if ($this->conn === null) {
             if (self::$pdo == null) {
-                self::$pdo = new PDO('mysql:host=localhost;dbname=jobApplication_mem', 'spamy', '1234');
+                self::$pdo = new PDO('mysql:host=localhost;dbname=' . getConfig()['databaseTest']['database'], getConfig()['databaseTest']['username'], getConfig()['databaseTest']['password']);
             }
             $this->conn = $this->createDefaultDBConnection(self::$pdo, 'heap');
         }
@@ -79,6 +79,7 @@ class StupidTest extends TestCase
         $this->assertTrue($taskResult->isValid);
     }
 
+
     public function testUploadTemplate()
     {
     }
@@ -99,7 +100,7 @@ class StupidTest extends TestCase
             , 'birthplace' => 'Fürth'
             , 'maritalStatus' => 'verheiratet']);
         $queryTable = $this->getConnection()->createQueryTable('userDetails', 'select * from userDetails');
-        $expectedTable = $this->createFlatXmlDataSet("/var/www/html/jobApplicationSpam/test/ucSetUserDetailsExpected.xml")->getTable("userDetails");
+        $expectedTable = $this->createFlatXmlDataSet('/var/www/html/jobApplicationSpam/test/ucSetUserDetailsExpected.xml')->getTable('userDetails');
         $this->assertTablesEqual($expectedTable, $queryTable);
     }
 
@@ -111,14 +112,14 @@ class StupidTest extends TestCase
             , 'postcode' => '90443'
             , 'city' => 'Nürnberg'
             , 'gender' => 'm'
-            , 'degree' => "Dr."
+            , 'degree' => 'Dr.'
             , 'firstName' => 'Thomas'
             , 'lastName' => 'Meier'
             , 'email' => 'thomas.meier@gmbh.de'
             , 'mobilePhone' => '0151 9348934'
             , 'phone' => '0911 1931141' ]);
         $queryTable = $this->getConnection()->createQueryTable('employer', 'select * from employer');
-        $expectedTable = $this->createFlatXmlDataSet("/var/www/html/jobApplicationSpam/test/ucAddEmployerExpected.xml")->getTable("employer");
+        $expectedTable = $this->createFlatXmlDataSet('/var/www/html/jobApplicationSpam/test/ucAddEmployerExpected.xml')->getTable('employer');
         $this->assertTablesEqual($expectedTable, $queryTable);
     }
 

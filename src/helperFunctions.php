@@ -1,14 +1,15 @@
 <?php
-    require_once('vendor/phpmailer/phpmailer/src/Exception.php');
-    require_once('vendor/phpmailer/phpmailer/src/PHPMailer.php');
-    require_once('vendor/phpmailer/phpmailer/src/SMTP.php');
+    require_once('../vendor/phpmailer/phpmailer/src/Exception.php');
+    require_once('../vendor/phpmailer/phpmailer/src/PHPMailer.php');
+    require_once('../vendor/phpmailer/phpmailer/src/SMTP.php');
+    require_once('../src/config.php');
 
     use PHPMailer\PHPMailer\PHPMailer;
 
 
     function getNonExistingFileName($baseDir, $ext)
     {
-        $fileName = "";
+        $fileName = '';
         do
         {
             $fileName = $baseDir . uniqid() . ($ext === '' ? '' : ".$ext");
@@ -35,8 +36,8 @@
             $email->SMTPAuth = true;
             $email->SMTPSecure = 'tls';
             $email->IsSMTP();
-            $email->Username = 'rene.ederer.nbg@gmail.com';
-            $email->Password = 'Steinmetzstr9';
+            $email->Username = getConfig()['email']['username'];
+            $email->Password = getConfig()['email']['password'];
             $email->SMTPOptions = array(
                 'ssl' => array(
                     'verify_peer' => false,

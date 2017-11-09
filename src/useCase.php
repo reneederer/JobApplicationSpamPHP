@@ -110,10 +110,7 @@ function ucAddEmployer($dbConn, $userId, $employer)
     {
         addEmployer($dbConn, $userId, $employer);
     }
-    else
-    {
-        $currentMessage .= join("<br>", $validateResult->errors);
-    }
+    return $validateResult;
 }
 
 
