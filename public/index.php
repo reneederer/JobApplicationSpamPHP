@@ -200,8 +200,14 @@ function submitForm(url, form)
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200)
         {
+            document.body.style.cursor = "pointer";
             document.querySelector("#mainDiv").innerHTML = this.responseText;
         }
+        else if(this.readyState == 4)
+        {
+            document.body.style.cursor = "pointer";
+        }
+
     };
     if(form == null || form == undefined)
     {
@@ -209,18 +215,20 @@ function submitForm(url, form)
     }
     else
     {
+        document.body.style.cursor = "wait";
         request.send(new FormData(form));
     }
 }
-
+function closeWindowOnEscape(el, ev)
+{
+    if(ev.keyCode == 27)
+    {
+        el.checked = false;
+    }
+}
 
 </script>
-
-
-
 </head>
-
-
 <body>
 
 
@@ -244,17 +252,17 @@ function submitForm(url, form)
             <main>
                 <div class="row" style="padding-top: 40px;" id="navigation-title">
                     <div id="mainDiv" class="col-sm-12">
-                        <label for="loginDialog">Show login</label>
+                        <label for="loginDialog" role="button">Einloggen</label>
                         <input id="loginDialog" type="checkbox" onChange="document.querySelector('#loginEmail').focus();"/>
-                        <div class="modal">
-                            <div class="card">
+                        <div class="modal" tabIndex="1000" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
+                            <div class="card" tabIndex="1001" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
                                 <label for="loginDialog" class="close"></label>
                                 <h3 class="section">Login</h3>
-                                <form onSubmit="document.querySelector('#loginDialog').value=false;submitForm('forms/login.php', this);return false;">
+                                <form onSubmit="document.querySelector('#loginDialog').checked=false;submitForm('forms/login.php', this);return false;">
                                     <label for="loginEmail">Email</label>
-                                    <input type="text" id="loginEmail" name="loginEmail" />
+                                    <input type="text" id="loginEmail" name="loginEmail" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
                                     <label for="loginPassword">Password</label>
-                                    <input type="password" id="loginPassword"  name="loginPassword" />
+                                    <input type="password" id="loginPassword"  name="loginPassword" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
                                     <input type="submit" value="Anmelden" />
                                 </form>
                             </div>
@@ -262,19 +270,19 @@ function submitForm(url, form)
 
 
 
-                        <label for="registerDialog">Show register</label>
+                        <label for="registerDialog" role="button">Registrieren</label>
                         <input id="registerDialog" type="checkbox" onChange="document.querySelector('#registerEmail').focus();"/>
                         <div class="modal">
                             <div class="card">
                                 <label for="registerDialog" class="close"></label>
                                 <h3 class="section">Register</h3>
-                                <form onSubmit="document.querySelector('#registerDialog').value=false;submitForm('forms/registerNewUser.php', this);return false;">
+                                <form onSubmit="document.querySelector('#registerDialog').checked=false;submitForm('forms/registerNewUser.php', this);return false;">
                                     <label for="registerEmail">Email</label>
-                                    <input type="text" id="registerEmail" name="registerEmail" type="text" />
+                                    <input type="text" id="registerEmail" name="registerEmail" onKeyDown="closeWindowOnEscape(document.querySelector('#registerDialog'), event);" />
                                     <label for="registerPassword">Passwort</label>
-                                    <input type="password" id="registerPasswort" name="registerPassword" />
+                                    <input type="password" id="registerPasswort" name="registerPassword" onKeyDown="closeWindowOnEscape(document.querySelector('#registerDialog'), event);" />
                                     <label for="registerPasswordRepeated">Passwort wiederholen</label>
-                                    <input type="password" id="registerPasswordRepeated" name="registerPasswordRepeated" />
+                                    <input type="password" id="registerPasswordRepeated" name="registerPasswordRepeated" onKeyDown="closeWindowOnEscape(document.querySelector('#registerDialog'), event);" />
                                     <input type="submit" value="Registrieren" />
                                 </form>
                             </div>
