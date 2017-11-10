@@ -18,32 +18,9 @@ $dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $dbConn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
 
-if(isset($_GET['email']) && isset($_GET['confirmationString']))
+if(isset($_POST['sbmLogout']))
 {
-    ucConfirmEmailAddress($dbConn, $_GET['email'], $_GET['confirmationString']);
-}
-if(isset($_POST['sbmLoginForm']))
-{
-    $_SESSION['userId'] = ucLogin($dbConn, $_POST['txtLoginEmail'], $_POST['txtLoginPassword']);
-}
-else if(isset($_POST['sbmLogout']))
-{
-    $_SESSION['userId'] = ucLogout();
     session_unset();
-}
-else if(isset($_POST['sbmRegisterForm']))
-    ucRegisterNewUser($dbConn, $_POST['txtRegisterEmail'], $_POST['txtRegisterPassword'], $_POST['txtRegisterPassworRepeated'], $sendMail);
-else if(isset($_POST['sbmSetUserDetails']))
-    ucSetUserDetails($dbConn, $_SESSION['userId'], $_POST['userDetails']);
-else if(isset($_POST['sbmDownloadPDF']))
-{
-    //TODO FIX or remove this!
-    //$dict = readEmployerFromWebsite('http://localhost/jobApplicationSpam/jobboerseArbeitsagentur.html');
-    //$directoryAndFileName = getPDF($directory, $odtFile, $dict);
-    //addToDownloads($dbConn, $directoryAndFileName[0], $_SESSION['userId']);
-    //header('Content-type:application/pdf');
-    //header("Content-Disposition:attachment;filename=jobApplication.pdf");
-    //echo file_get_contents($directoryAndFileName[0] .  $directoryAndFileName[1]);
 }
 else if(isset($_POST['sbmApplyNowForReal']) || isset($_POST['sbmApplyNowForTest']))
 {
@@ -106,8 +83,7 @@ else if(isset($_POST['sbmDownloadSentApplications']))
     <title>www.bewerbungsspam.de</title>
 
 
-    <link rel="stylesheet" href="css/current.css" />
-    <link rel="stylesheet" href="https://gitcdn.link/repo/Chalarangelo/mini.css/master/dist/mini-default.min.css" />
+    <link rel="stylesheet" href="css/mini-default.css" />
     <style>
         .responsive-label {align-items: center;}
     </style>
@@ -191,10 +167,11 @@ function validateInput(el)
 }
 
 
-function submitForm(url, form)
+function submitForm(url, form, async)
 {
+    if(typeof(async) == 'undefined') { async = true; }
     var request = new XMLHttpRequest();
-    request.open("POST", url, true);
+    request.open("POST", url, async);
     request.onreadystatechange = function() {
         if (this.readyState == 4)
         {
@@ -228,6 +205,7 @@ function closeWindowOnEscape(el, ev)
     }
 }
 
+
 </script>
 </head>
 <body>
@@ -235,8 +213,29 @@ function closeWindowOnEscape(el, ev)
 
 
 <header class="sticky" id="header-toggle">
-    <label class="drawer-toggle button" style="position:sticky" for="navigation-toggle"></label>
-    <a href="" class="logo">www.bewerbungsspam.de</span></a>
+    <label class="drawer-toggle button" style="position:sticky;float:left" for="navigation-toggle"></label>
+    <div id="divLogin" style="display:inline-block;vertical-align:middle;float:right;">
+<?php
+        if(isset($_SESSION['userEmail']))
+        {
+?>
+            <button onClick="if(confirm('Ausloggen?')) submitForm('forms/logout.php', null, false); window.location.href='';">
+<?php 
+            echo htmlspecialchars($_SESSION['userEmail']);
+?>
+            </button>
+<?php
+        }
+        else
+        {
+?>
+            <label for="loginDialog" role="button">Einloggen</label>
+            <label for="registerDialog" role="button">Registrieren</label>
+<?php
+        }
+?>
+    </div>
+    <a href="https://www.bewerbungsspam.de" class="logo" style="float:left">www.bewerbungsspam.de</a>
 </header>
 <div class="container" style="padding-left: 0.25rem;">
     <div class="row"> <input type="checkbox" id="navigation-toggle">
@@ -246,20 +245,19 @@ function closeWindowOnEscape(el, ev)
             <a href="" onClick="submitForm('forms/setUserDetails.php', null);return false;">Deine Werte ändern</a>
             <a href="" onClick="submitForm('forms/addEmployer.php', null); return false">Arbeitgeber hinzufügen</a>
             <a href="" onClick="submitForm('forms/applyNow.php', null);return false">Jetzt bewerben</a></h3>
-            <a href="">Abgeschickte Bewerbungen anzeigen</a>
-            <a href="">Termine</a>
+            <a href="" onClick="submitForm('forms/showSentApplications.php', null);return false">Abgeschickte Bewerbungen anzeigen</a>
+            <a href="" onClick=submitForm('forms/appointments.php', null);return false">Termine</a>
         </nav>
         <div class="col-sm-12 col-md-8 col-lg-10">
             <main>
                 <div class="row" style="padding-top: 40px;" id="navigation-title">
                     <div id="mainDiv" class="col-sm-12">
-                        <label for="loginDialog" role="button">Einloggen</label>
                         <input id="loginDialog" type="checkbox" onChange="document.querySelector('#loginEmail').focus();"/>
                         <div class="modal" tabIndex="1000" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
                             <div class="card" tabIndex="1001" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
                                 <label for="loginDialog" class="close"></label>
                                 <h3 class="section">Login</h3>
-                                <form onSubmit="document.querySelector('#loginDialog').checked=false;submitForm('forms/login.php', this);return false;">
+                                <form onSubmit="document.querySelector('#loginDialog').checked=false;submitForm('forms/login.php', this, false);window.location.href=''">
                                     <label for="loginEmail">Email</label>
                                     <input type="text" id="loginEmail" name="loginEmail" onKeyDown="closeWindowOnEscape(document.querySelector('#loginDialog'), event);" />
                                     <label for="loginPassword">Password</label>
@@ -271,7 +269,6 @@ function closeWindowOnEscape(el, ev)
 
 
 
-                        <label for="registerDialog" role="button">Registrieren</label>
                         <input id="registerDialog" type="checkbox" onChange="document.querySelector('#registerEmail').focus();"/>
                         <div class="modal">
                             <div class="card">
@@ -292,13 +289,6 @@ function closeWindowOnEscape(el, ev)
 if(isset($_SESSION['userId']) && $_SESSION['userId'] >= 1)
 {
 ?>
-                    <div id="loggedInDiv">
-                    Eingeloggt als <?php
-    $email = getEmailByUserId($dbConn, $_SESSION['userId']);
-    echo htmlspecialchars($email); ?>
-                        <br />
-                        <form action="" method="post"><input type="submit" value="Ausloggen" name="sbmLogout" /></form>
-                    </div>
 
 <?php
 }

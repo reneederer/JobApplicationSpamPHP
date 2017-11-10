@@ -4,10 +4,10 @@
     error_reporting(E_ALL);
 
     if(!isset($_SESSION)) { session_start(); }
-    require_once('/var/www/html/jobApplicationSpam/src/validate.php');
-    require_once('/var/www/html/jobApplicationSpam/src/dbFunctions.php');
-    require_once('/var/www/html/jobApplicationSpam/src/useCase.php');
-    require_once('/var/www/html/jobApplicationSpam/src/config.php');
+    require_once('file:///var/www/html/jobApplicationSpam/src/validate.php');
+    require_once('file:///var/www/html/jobApplicationSpam/src/dbFunctions.php');
+    require_once('file:///var/www/html/jobApplicationSpam/src/useCase.php');
+    require_once('file:///var/www/html/jobApplicationSpam/src/config.php');
     $loginMsg = '';
     if(isset($_POST['loginEmail']))
     {
@@ -18,7 +18,8 @@
         if($taskResult->isValid)
         {
             $_SESSION['userId'] = $userId;
-            include('/var/www/html/jobApplicationSpam/public/forms/addEmployer.php');
+            $_SESSION['userEmail'] = $_POST['loginEmail'];
+            include('file:///var/www/html/jobApplicationSpam/public/forms/addEmployer.php');
         }
         else
         {
